@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants.dart';
@@ -138,6 +139,11 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                             ) ...[
                               _TransactionPreviewRow(
                                 transaction: cardTransactions[index],
+                                onTap: () {
+                                  context.go(
+                                    '/transaction/${cardTransactions[index].id}',
+                                  );
+                                },
                               ),
                               if (index < cardTransactions.length - 1 &&
                                   index < 2)
@@ -360,9 +366,13 @@ class _ActionChip extends StatelessWidget {
 }
 
 class _TransactionPreviewRow extends StatelessWidget {
-  const _TransactionPreviewRow({required this.transaction});
+  const _TransactionPreviewRow({
+    required this.transaction,
+    required this.onTap,
+  });
 
   final Transaction transaction;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -376,43 +386,88 @@ class _TransactionPreviewRow extends StatelessWidget {
     );
     final DateFormat timeFormat = DateFormat('dd MMM, HH:mm');
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: colorScheme.outline),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: colorScheme.outline),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                transaction.emoji,
+                style: theme.textTheme.titleMedium,
+              ),
             ),
-            alignment: Alignment.center,
-            child: Text(transaction.emoji, style: theme.textTheme.titleMedium),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(transaction.title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(
-                  '${transaction.subtitle} • ${timeFormat.format(transaction.date)}',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(transaction.title, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${transaction.subtitle} • ${timeFormat.format(transaction.date)}',
+                          style: theme.textTheme.bodyMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _MiniStatusBadge(status: transaction.status),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            amountFormat.format(transaction.amount),
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: isPositive ? theme.successColor : colorScheme.onSurface,
+            const SizedBox(width: 12),
+            Text(
+              amountFormat.format(transaction.amount),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: isPositive ? theme.successColor : colorScheme.onSurface,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniStatusBadge extends StatelessWidget {
+  const _MiniStatusBadge({required this.status});
+
+  final TransactionStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isPending = status == TransactionStatus.pending;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isPending
+            ? colorScheme.primary.withValues(alpha: 0.16)
+            : colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        isPending ? 'Pending' : 'Booked',
+        style: theme.textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

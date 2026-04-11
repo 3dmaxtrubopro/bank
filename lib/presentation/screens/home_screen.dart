@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/security_provider.dart';
 import '../../providers/selected_card_provider.dart';
 import '../../providers/theme_mode_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -128,6 +129,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onThemeModeChanged: (material.ThemeMode value) {
           ref.read(themeModeProvider.notifier).state = value;
         },
+        onLockNow: () {
+          ref.read(securityProvider.notifier).lockApp();
+        },
         onLogout: () {
           ref.read(authProvider.notifier).signOut();
           context.go('/login');
@@ -222,11 +226,13 @@ class _SettingsSection extends material.StatelessWidget {
   const _SettingsSection({
     required this.currentThemeMode,
     required this.onThemeModeChanged,
+    required this.onLockNow,
     required this.onLogout,
   });
 
   final material.ThemeMode currentThemeMode;
   final material.ValueChanged<material.ThemeMode> onThemeModeChanged;
+  final material.VoidCallback onLockNow;
   final material.VoidCallback onLogout;
 
   @override
@@ -295,6 +301,14 @@ class _SettingsSection extends material.StatelessWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
                 const material.SizedBox(height: 20),
+                material.OutlinedButton.icon(
+                  onPressed: onLockNow,
+                  icon: const material.Icon(
+                    material.Icons.lock_outline_rounded,
+                  ),
+                  label: const material.Text('Lock app now'),
+                ),
+                const material.SizedBox(height: 12),
                 material.ElevatedButton.icon(
                   onPressed: onLogout,
                   icon: const material.Icon(material.Icons.logout_rounded),

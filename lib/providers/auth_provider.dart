@@ -122,6 +122,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return true;
   }
 
+  Future<bool> authenticateBiometricsForAction({required String reason}) async {
+    final availability = await getBiometricAvailability();
+    if (!availability.isAvailable) {
+      return false;
+    }
+
+    try {
+      return await _localAuth.authenticate(
+        localizedReason: reason,
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+    } on PlatformException {
+      return false;
+    }
+  }
+
   void signOut() {
     state = const AuthState.unauthenticated();
     _routerRefreshNotifier.notifyListeners();
@@ -190,7 +209,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       final didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Authenticate to access Mobile Bank',
+        localizedReason: 'Authenticate to access ${AppConstants.appTitle}',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,

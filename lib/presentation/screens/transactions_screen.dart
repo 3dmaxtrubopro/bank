@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -52,6 +53,9 @@ class TransactionsScreen extends ConsumerWidget {
                   return _TransactionSection(
                     date: entry.key,
                     transactions: entry.value,
+                    onOpenTransaction: (transactionId) {
+                      context.go('/transaction/$transactionId');
+                    },
                   );
                 },
               );
@@ -92,10 +96,15 @@ class _Header extends StatelessWidget {
 }
 
 class _TransactionSection extends StatelessWidget {
-  const _TransactionSection({required this.date, required this.transactions});
+  const _TransactionSection({
+    required this.date,
+    required this.transactions,
+    required this.onOpenTransaction,
+  });
 
   final DateTime date;
   final List<Transaction> transactions;
+  final ValueChanged<String> onOpenTransaction;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +128,12 @@ class _TransactionSection extends StatelessWidget {
           child: Column(
             children: [
               for (var index = 0; index < transactions.length; index++) ...[
-                _TransactionRow(transaction: transactions[index]),
+                _TransactionRow(
+                  transaction: transactions[index],
+                  onTap: () {
+                    onOpenTransaction(transactions[index].id);
+                  },
+                ),
                 if (index != transactions.length - 1)
                   const Divider(height: 1, thickness: 1),
               ],
@@ -132,9 +146,10 @@ class _TransactionSection extends StatelessWidget {
 }
 
 class _TransactionRow extends StatelessWidget {
-  const _TransactionRow({required this.transaction});
+  const _TransactionRow({required this.transaction, required this.onTap});
 
   final Transaction transaction;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -148,52 +163,98 @@ class _TransactionRow extends StatelessWidget {
     );
     final timeFormat = DateFormat('HH:mm');
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(14),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              alignment: Alignment.center,
+              child: Text(transaction.emoji, style: theme.textTheme.titleLarge),
             ),
-            alignment: Alignment.center,
-            child: Text(transaction.emoji, style: theme.textTheme.titleLarge),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          transaction.title,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _TransactionStatusBadge(status: transaction.status),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(transaction.subtitle, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(transaction.title, style: theme.textTheme.titleMedium),
+                Text(
+                  amountFormat.format(transaction.amount),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: isPositive
+                        ? theme.successColor
+                        : colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(transaction.subtitle, style: theme.textTheme.bodyMedium),
+                Text(
+                  timeFormat.format(transaction.date),
+                  style: theme.textTheme.bodyMedium,
+                ),
               ],
             ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amountFormat.format(transaction.amount),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: isPositive
-                      ? theme.successColor
-                      : colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                timeFormat.format(transaction.date),
-                style: theme.textTheme.bodyMedium,
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionStatusBadge extends StatelessWidget {
+  const _TransactionStatusBadge({required this.status});
+
+  final TransactionStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isPending = status == TransactionStatus.pending;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isPending
+            ? colorScheme.primary.withValues(alpha: 0.18)
+            : colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        isPending ? 'Pending' : 'Booked',
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: isPending
+              ? colorScheme.onSurface
+              : theme.textTheme.bodyMedium?.color,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

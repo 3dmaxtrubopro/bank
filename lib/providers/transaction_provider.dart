@@ -17,6 +17,14 @@ final transactionProvider = FutureProvider<List<Transaction>>((ref) async {
 
 final transactionsProvider = transactionProvider;
 
+final transactionByIdProvider = FutureProvider.family<Transaction?, String>((
+  ref,
+  transactionId,
+) async {
+  final repository = ref.watch(appDataRepositoryProvider);
+  return repository.getTransactionById(transactionId);
+});
+
 final selectedCardTransactionsProvider = Provider<List<Transaction>>((ref) {
   return ref.watch(transactionProvider).valueOrNull ?? const <Transaction>[];
 });

@@ -71,6 +71,7 @@ class AppDataRepository {
       currency: AppConstants.defaultCurrency,
       date: DateTime(2026, 4, 2, 18, 40),
       emoji: '✈️',
+      status: TransactionStatus.pending,
     ),
     Transaction(
       id: 't4',
@@ -130,6 +131,16 @@ class AppDataRepository {
         .where((Transaction transaction) => transaction.cardId == cardId)
         .toList(growable: false);
     return List<Transaction>.unmodifiable(_sortedTransactions(filtered));
+  }
+
+  Future<Transaction?> getTransactionById(String transactionId) async {
+    await Future<void>.delayed(AppConstants.apiDelay);
+    for (final Transaction transaction in _transactions) {
+      if (transaction.id == transactionId) {
+        return transaction;
+      }
+    }
+    return null;
   }
 
   Future<void> addTransaction(Transaction transaction) async {

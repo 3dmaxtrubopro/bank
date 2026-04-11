@@ -1,3 +1,5 @@
+enum TransactionStatus { booked, pending }
+
 class Transaction {
   const Transaction({
     required this.id,
@@ -8,6 +10,7 @@ class Transaction {
     required this.currency,
     required this.date,
     this.emoji = '💳',
+    this.status = TransactionStatus.booked,
   });
 
   final String id;
@@ -18,4 +21,5 @@ class Transaction {
   final String currency;
   final DateTime date;
   final String emoji;
+  final TransactionStatus status;
 }

@@ -7,7 +7,9 @@ import '../../core/constants.dart';
 import '../../data/models/card.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/app_data_repository.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/card_provider.dart';
+import '../../providers/security_provider.dart';
 import '../../providers/selected_card_provider.dart';
 import '../../providers/transaction_provider.dart';
 
@@ -22,11 +24,53 @@ final _transferNoteProvider = StateProvider<String>(
   (ref) => 'Consulting retainer',
 );
 
-class TransferScreen extends ConsumerWidget {
-  const TransferScreen({super.key});
+class TransferScreen extends ConsumerStatefulWidget {
+  const TransferScreen({
+    this.initialRecipient,
+    this.initialIban,
+    this.initialNote,
+    this.initialAmount,
+    super.key,
+  });
+
+  final String? initialRecipient;
+  final String? initialIban;
+  final String? initialNote;
+  final String? initialAmount;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TransferScreen> createState() => _TransferScreenState();
+}
+
+class _TransferScreenState extends ConsumerState<TransferScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialRecipient != null &&
+          widget.initialRecipient!.trim().isNotEmpty) {
+        ref.read(_transferRecipientProvider.notifier).state = widget
+            .initialRecipient!
+            .trim();
+      }
+      if (widget.initialIban != null && widget.initialIban!.trim().isNotEmpty) {
+        ref.read(_transferIbanProvider.notifier).state = widget.initialIban!
+            .trim();
+      }
+      if (widget.initialNote != null && widget.initialNote!.trim().isNotEmpty) {
+        ref.read(_transferNoteProvider.notifier).state = widget.initialNote!
+            .trim();
+      }
+      if (widget.initialAmount != null &&
+          widget.initialAmount!.trim().isNotEmpty) {
+        ref.read(_transferAmountProvider.notifier).state = widget.initialAmount!
+            .trim();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
     final AsyncValue<List<Card>> cardsAsync = ref.watch(cardsProvider);
@@ -190,6 +234,34 @@ class TransferScreen extends ConsumerWidget {
                                       return;
                                     }
 
+                                    final bool confirmed =
+                                        await _confirmTransfer(
+                                          context: context,
+                                          sourceCard: sourceCard,
+                                          recipient: recipient.trim(),
+                                          iban: iban.trim(),
+                                          note: note.trim(),
+                                          amount: parsedAmount,
+                                          currencyFormat: currencyFormat,
+                                        );
+                                    if (!confirmed) {
+                                      return;
+                                    }
+                                    if (!context.mounted) {
+                                      return;
+                                    }
+
+                                    final bool stepUpPassed =
+                                        await _authorizeLargeTransfer(
+                                          context: context,
+                                          ref: ref,
+                                          amount: parsedAmount,
+                                          currency: sourceCard.currency,
+                                        );
+                                    if (!stepUpPassed) {
+                                      return;
+                                    }
+
                                     final Transaction tx = Transaction(
                                       id: 'tx-${DateTime.now().microsecondsSinceEpoch}',
                                       cardId: sourceCard.id,
@@ -199,6 +271,7 @@ class TransferScreen extends ConsumerWidget {
                                       currency: sourceCard.currency,
                                       date: DateTime.now(),
                                       emoji: '💸',
+                                      status: TransactionStatus.pending,
                                     );
 
                                     await AppDataRepository.instance
@@ -299,3 +372,268 @@ class _FlatSection extends StatelessWidget {
     );
   }
 }
+
+Future<bool> _confirmTransfer({
+  required BuildContext context,
+  required Card sourceCard,
+  required String recipient,
+  required String iban,
+  required String note,
+  required double amount,
+  required NumberFormat currencyFormat,
+}) async {
+  final bool? result = await showModalBottomSheet<bool>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (BuildContext sheetContext) {
+      final theme = Theme.of(sheetContext);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Review transfer', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 14),
+            _ReviewRow(
+              label: 'From',
+              value: '${sourceCard.label} ${sourceCard.maskedNumber}',
+            ),
+            _ReviewRow(label: 'Recipient', value: recipient),
+            _ReviewRow(label: 'IBAN', value: iban),
+            _ReviewRow(label: 'Reference', value: note),
+            _ReviewRow(label: 'Amount', value: currencyFormat.format(amount)),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(true),
+                    child: const Text('Confirm'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
+  return result ?? false;
+}
+
+class _ReviewRow extends StatelessWidget {
+  const _ReviewRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 84,
+            child: Text(label, style: theme.textTheme.bodyMedium),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(value, style: theme.textTheme.titleMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+Future<bool> _authorizeLargeTransfer({
+  required BuildContext context,
+  required WidgetRef ref,
+  required double amount,
+  required String currency,
+}) async {
+  if (amount < AppConstants.stepUpAuthAmountThreshold) {
+    return true;
+  }
+
+  final securityState = ref.read(securityProvider);
+  final canUseBiometrics =
+      (await ref.read(authProvider.notifier).getBiometricAvailability())
+          .isAvailable;
+  final hasPin = securityState.hasPinCode;
+
+  if (!hasPin && !canUseBiometrics) {
+    return true;
+  }
+  if (!context.mounted) {
+    return false;
+  }
+
+  final messenger = ScaffoldMessenger.of(context);
+  final method = await _chooseStepUpMethod(
+    context: context,
+    canUseBiometrics: canUseBiometrics,
+    hasPin: hasPin,
+    amount: amount,
+    currency: currency,
+  );
+
+  if (method == null) {
+    return false;
+  }
+
+  if (method == _StepUpMethod.biometrics) {
+    final ok = await ref
+        .read(authProvider.notifier)
+        .authenticateBiometricsForAction(
+          reason:
+              'Approve high-value transfer of $currency ${amount.toStringAsFixed(2)}',
+        );
+    if (!context.mounted) {
+      return false;
+    }
+    if (!ok) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Biometric verification failed. Transfer was not submitted.',
+            ),
+          ),
+        );
+    }
+    return ok;
+  }
+  if (!context.mounted) {
+    return false;
+  }
+
+  final pin = await _promptStepUpPin(context);
+  if (pin == null) {
+    return false;
+  }
+
+  final ok = ref.read(securityProvider.notifier).verifyPinCode(pin);
+  if (!ok) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Incorrect PIN. Transfer was not submitted.'),
+        ),
+      );
+  }
+  return ok;
+}
+
+Future<_StepUpMethod?> _chooseStepUpMethod({
+  required BuildContext context,
+  required bool canUseBiometrics,
+  required bool hasPin,
+  required double amount,
+  required String currency,
+}) async {
+  if (canUseBiometrics && !hasPin) {
+    return _StepUpMethod.biometrics;
+  }
+  if (!canUseBiometrics && hasPin) {
+    return _StepUpMethod.pin;
+  }
+
+  final _StepUpMethod? method = await showModalBottomSheet<_StepUpMethod>(
+    context: context,
+    showDragHandle: true,
+    builder: (BuildContext sheetContext) {
+      final theme = Theme.of(sheetContext);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Additional verification required',
+              style: theme.textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Transfers above $currency ${AppConstants.stepUpAuthAmountThreshold.toStringAsFixed(0)} require extra approval.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.fingerprint_rounded),
+              title: const Text('Use biometrics'),
+              subtitle: Text('Approve $currency ${amount.toStringAsFixed(2)}'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_StepUpMethod.biometrics),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.pin_outlined),
+              title: const Text('Use PIN'),
+              subtitle: const Text('Enter your security PIN'),
+              onTap: () => Navigator.of(sheetContext).pop(_StepUpMethod.pin),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
+  return method;
+}
+
+Future<String?> _promptStepUpPin(BuildContext context) async {
+  String pin = '';
+  final String? value = await showDialog<String>(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Confirm with PIN'),
+            content: TextFormField(
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Security PIN'),
+              onChanged: (v) {
+                setState(() {
+                  pin = v.trim();
+                });
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: pin.length < 4
+                    ? null
+                    : () => Navigator.of(dialogContext).pop(pin),
+                child: const Text('Confirm'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+  return value;
+}
+
+enum _StepUpMethod { biometrics, pin }
