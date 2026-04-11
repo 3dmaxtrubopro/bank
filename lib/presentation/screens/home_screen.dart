@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/selected_card_provider.dart';
+import '../../providers/theme_mode_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../widgets/card_carousel_widget.dart';
 
@@ -29,28 +30,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       symbol: '${selectedCard?.currency ?? AppConstants.defaultCurrency} ',
       decimalDigits: 2,
     );
-    final latestTransaction = transactions.isNotEmpty ? transactions.first : null;
+    final latestTransaction = transactions.isNotEmpty
+        ? transactions.first
+        : null;
 
     final List<material.Widget> pages = <material.Widget>[
       material.ListView(
         padding: AppLayout.screenPadding,
         children: <material.Widget>[
-          material.Text(
-            'Good afternoon',
-            style: theme.textTheme.bodyMedium,
-          ),
+          material.Text('Good afternoon', style: theme.textTheme.bodyMedium),
           const material.SizedBox(height: 8),
-          material.Text(
-            'Wealth overview',
-            style: theme.textTheme.displaySmall,
-          ),
+          material.Text('Wealth overview', style: theme.textTheme.displaySmall),
           const material.SizedBox(height: 24),
           const CardCarouselWidget(),
           const material.SizedBox(height: 24),
-          material.Text(
-            'Shortcuts',
-            style: theme.textTheme.titleLarge,
-          ),
+          material.Text('Shortcuts', style: theme.textTheme.titleLarge),
           const material.SizedBox(height: 12),
           material.Row(
             children: <material.Widget>[
@@ -98,10 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const material.SizedBox(height: 24),
           ],
-          material.Text(
-            'Highlights',
-            style: theme.textTheme.titleLarge,
-          ),
+          material.Text('Highlights', style: theme.textTheme.titleLarge),
           const material.SizedBox(height: 12),
           _InsightTile(
             title: 'Portfolio balance',
@@ -112,11 +103,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const material.SizedBox(height: 12),
           _InsightTile(
-            title: latestTransaction?.title ?? 'No recent activity yet',
+            title: latestTransaction == null
+                ? 'No recent activity yet'
+                : '${latestTransaction.emoji} ${latestTransaction.title}',
             value: latestTransaction == null
                 ? '${AppConstants.defaultCurrency} 0.00'
                 : currency.format(latestTransaction.amount),
-            subtitle: latestTransaction?.subtitle ??
+            subtitle:
+                latestTransaction?.subtitle ??
                 'Transactions will appear once available',
           ),
         ],
@@ -130,6 +124,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         subtitle: 'Support tools and contact options will appear here.',
       ),
       _SettingsSection(
+        currentThemeMode: ref.watch(themeModeProvider),
+        onThemeModeChanged: (material.ThemeMode value) {
+          ref.read(themeModeProvider.notifier).state = value;
+        },
         onLogout: () {
           ref.read(authProvider.notifier).signOut();
           context.go('/login');
@@ -182,10 +180,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _PlaceholderSection extends material.StatelessWidget {
-  const _PlaceholderSection({
-    required this.title,
-    required this.subtitle,
-  });
+  const _PlaceholderSection({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -193,6 +188,7 @@ class _PlaceholderSection extends material.StatelessWidget {
   @override
   material.Widget build(material.BuildContext context) {
     final material.ThemeData theme = material.Theme.of(context);
+    final material.ColorScheme colorScheme = theme.colorScheme;
 
     return material.Center(
       child: material.Padding(
@@ -200,11 +196,11 @@ class _PlaceholderSection extends material.StatelessWidget {
         child: material.Container(
           constraints: const material.BoxConstraints(maxWidth: 520),
           padding: const material.EdgeInsets.all(24),
-          decoration: const material.BoxDecoration(
-            color: AppColors.panel,
+          decoration: material.BoxDecoration(
+            color: colorScheme.surface,
             borderRadius: AppLayout.cardRadius,
             border: material.Border.fromBorderSide(
-              material.BorderSide(color: AppColors.line),
+              material.BorderSide(color: colorScheme.outline),
             ),
           ),
           child: material.Column(
@@ -223,8 +219,14 @@ class _PlaceholderSection extends material.StatelessWidget {
 }
 
 class _SettingsSection extends material.StatelessWidget {
-  const _SettingsSection({required this.onLogout});
+  const _SettingsSection({
+    required this.currentThemeMode,
+    required this.onThemeModeChanged,
+    required this.onLogout,
+  });
 
+  final material.ThemeMode currentThemeMode;
+  final material.ValueChanged<material.ThemeMode> onThemeModeChanged;
   final material.VoidCallback onLogout;
 
   @override
@@ -241,6 +243,45 @@ class _SettingsSection extends material.StatelessWidget {
           style: theme.textTheme.bodyMedium,
         ),
         const material.SizedBox(height: 24),
+        material.Card(
+          child: material.Padding(
+            padding: const material.EdgeInsets.all(20),
+            child: material.Column(
+              crossAxisAlignment: material.CrossAxisAlignment.start,
+              children: <material.Widget>[
+                material.Text('Appearance', style: theme.textTheme.titleLarge),
+                const material.SizedBox(height: 12),
+                material.Text(
+                  'Choose your preferred app theme.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const material.SizedBox(height: 16),
+                material.SegmentedButton<material.ThemeMode>(
+                  segments: const <material.ButtonSegment<material.ThemeMode>>[
+                    material.ButtonSegment<material.ThemeMode>(
+                      value: material.ThemeMode.light,
+                      icon: material.Icon(material.Icons.light_mode_outlined),
+                      label: material.Text('Light'),
+                    ),
+                    material.ButtonSegment<material.ThemeMode>(
+                      value: material.ThemeMode.dark,
+                      icon: material.Icon(material.Icons.dark_mode_outlined),
+                      label: material.Text('Dark'),
+                    ),
+                  ],
+                  selected: <material.ThemeMode>{currentThemeMode},
+                  onSelectionChanged: (Set<material.ThemeMode> selection) {
+                    if (selection.isEmpty) {
+                      return;
+                    }
+                    onThemeModeChanged(selection.first);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        const material.SizedBox(height: 16),
         material.Card(
           child: material.Padding(
             padding: const material.EdgeInsets.all(20),
@@ -283,6 +324,8 @@ class _AccountCard extends material.StatelessWidget {
 
   @override
   material.Widget build(material.BuildContext context) {
+    final material.ColorScheme colorScheme = theme.colorScheme;
+
     return material.Card(
       child: material.Padding(
         padding: const material.EdgeInsets.all(24),
@@ -303,8 +346,8 @@ class _AccountCard extends material.StatelessWidget {
                 horizontal: 14,
                 vertical: 10,
               ),
-              decoration: const material.BoxDecoration(
-                color: AppColors.surface,
+              decoration: material.BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: AppLayout.cardRadius,
               ),
               child: material.Text(
@@ -333,6 +376,7 @@ class _ShortcutTile extends material.StatelessWidget {
   @override
   material.Widget build(material.BuildContext context) {
     final material.ThemeData theme = material.Theme.of(context);
+    final material.ColorScheme colorScheme = theme.colorScheme;
 
     return material.Card(
       child: material.InkWell(
@@ -343,7 +387,7 @@ class _ShortcutTile extends material.StatelessWidget {
           child: material.Column(
             crossAxisAlignment: material.CrossAxisAlignment.start,
             children: <material.Widget>[
-              material.Icon(icon, color: AppColors.ink),
+              material.Icon(icon, color: colorScheme.onSurface),
               const material.SizedBox(height: 20),
               material.Text(label, style: theme.textTheme.titleMedium),
             ],

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants.dart';
+import '../../core/theme.dart';
 import '../../data/models/transaction.dart';
 import '../../providers/selected_card_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -24,8 +25,12 @@ class TransactionsScreen extends ConsumerWidget {
           padding: AppLayout.screenPadding,
           child: transactionsAsync.when(
             data: (_) {
-              final groupedTransactions = ref.watch(groupedTransactionsProvider);
-              final entries = groupedTransactions.entries.toList(growable: false);
+              final groupedTransactions = ref.watch(
+                groupedTransactionsProvider,
+              );
+              final entries = groupedTransactions.entries.toList(
+                growable: false,
+              );
 
               return ListView.separated(
                 itemCount: entries.length + 1,
@@ -87,10 +92,7 @@ class _Header extends StatelessWidget {
 }
 
 class _TransactionSection extends StatelessWidget {
-  const _TransactionSection({
-    required this.date,
-    required this.transactions,
-  });
+  const _TransactionSection({required this.date, required this.transactions});
 
   final DateTime date;
   final List<Transaction> transactions;
@@ -98,21 +100,21 @@ class _TransactionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final headingFormat = DateFormat('dd MMM yyyy');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          headingFormat.format(date),
-          style: theme.textTheme.titleLarge,
-        ),
+        Text(headingFormat.format(date), style: theme.textTheme.titleLarge),
         const SizedBox(height: 12),
         DecoratedBox(
-          decoration: const BoxDecoration(
-            color: AppColors.panel,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
             borderRadius: AppLayout.cardRadius,
-            border: Border.fromBorderSide(BorderSide(color: AppColors.line)),
+            border: Border.fromBorderSide(
+              BorderSide(color: colorScheme.outline),
+            ),
           ),
           child: Column(
             children: [
@@ -137,6 +139,7 @@ class _TransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isPositive = transaction.amount >= 0;
     final amountFormat = NumberFormat.currency(
       locale: AppConstants.currencyLocale,
@@ -154,13 +157,11 @@ class _TransactionRow extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              isPositive ? Icons.south_west_rounded : Icons.north_east_rounded,
-              color: isPositive ? AppColors.success : AppColors.ink,
-            ),
+            alignment: Alignment.center,
+            child: Text(transaction.emoji, style: theme.textTheme.titleLarge),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -180,7 +181,9 @@ class _TransactionRow extends StatelessWidget {
               Text(
                 amountFormat.format(transaction.amount),
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: isPositive ? AppColors.success : AppColors.ink,
+                  color: isPositive
+                      ? theme.successColor
+                      : colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
@@ -201,6 +204,8 @@ class _TransactionsSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListView(
       children: [
         const _Header(
@@ -210,8 +215,8 @@ class _TransactionsSkeleton extends StatelessWidget {
         const SizedBox(height: 24),
         for (var section = 0; section < 2; section++) ...[
           Shimmer.fromColors(
-            baseColor: AppColors.line,
-            highlightColor: AppColors.surface,
+            baseColor: colorScheme.outlineVariant,
+            highlightColor: colorScheme.surfaceContainerHighest,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

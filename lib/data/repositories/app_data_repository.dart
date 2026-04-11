@@ -11,7 +11,7 @@ class AppDataRepository {
     Card(
       id: 'primary',
       holderName: 'Alex Morgan',
-      label: 'UBS Platinum',
+      label: 'PostFinance Platinum',
       maskedNumber: '**** 1847',
       balance: 128450.90,
       currency: AppConstants.defaultCurrency,
@@ -22,7 +22,7 @@ class AppDataRepository {
     Card(
       id: 'travel',
       holderName: 'Alex Morgan',
-      label: 'UBS Travel',
+      label: 'PostFinance Travel',
       maskedNumber: '**** 6721',
       balance: 9420.20,
       currency: AppConstants.defaultCurrency,
@@ -32,7 +32,7 @@ class AppDataRepository {
     Card(
       id: 'reserve',
       holderName: 'Alex Morgan',
-      label: 'UBS Reserve',
+      label: 'PostFinance Reserve',
       maskedNumber: '**** 9024',
       balance: 245800.00,
       currency: AppConstants.defaultCurrency,
@@ -50,15 +50,17 @@ class AppDataRepository {
       amount: -1250.00,
       currency: AppConstants.defaultCurrency,
       date: DateTime(2026, 4, 7, 14, 20),
+      emoji: '📊',
     ),
     Transaction(
       id: 't2',
       cardId: 'primary',
       title: 'Salary transfer',
-      subtitle: 'UBS payroll',
+      subtitle: 'PostFinance payroll',
       amount: 8400.00,
       currency: AppConstants.defaultCurrency,
       date: DateTime(2026, 4, 6, 9, 10),
+      emoji: '💼',
     ),
     Transaction(
       id: 't3',
@@ -68,6 +70,7 @@ class AppDataRepository {
       amount: -320.45,
       currency: AppConstants.defaultCurrency,
       date: DateTime(2026, 4, 2, 18, 40),
+      emoji: '✈️',
     ),
     Transaction(
       id: 't4',
@@ -77,6 +80,7 @@ class AppDataRepository {
       amount: 186.30,
       currency: AppConstants.defaultCurrency,
       date: DateTime(2026, 3, 31, 11, 5),
+      emoji: '📈',
     ),
     Transaction(
       id: 't5',
@@ -86,6 +90,7 @@ class AppDataRepository {
       amount: -184.90,
       currency: AppConstants.defaultCurrency,
       date: DateTime(2026, 3, 31, 20, 15),
+      emoji: '🍽️',
     ),
     Transaction(
       id: 't6',
@@ -95,6 +100,7 @@ class AppDataRepository {
       amount: 240.00,
       currency: AppConstants.defaultCurrency,
       date: DateTime(2026, 3, 29, 16, 45),
+      emoji: '🏨',
     ),
   ];
 
@@ -132,9 +138,8 @@ class AppDataRepository {
   }
 
   List<Transaction> _sortedTransactions(List<Transaction> items) {
-    return List<Transaction>.from(items)
-      ..sort(
-        (Transaction left, Transaction right) => right.date.compareTo(left.date),
-      );
+    return List<Transaction>.from(items)..sort(
+      (Transaction left, Transaction right) => right.date.compareTo(left.date),
+    );
   }
 }

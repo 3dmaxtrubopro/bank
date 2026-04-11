@@ -46,9 +46,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final transactions = ref.watch(selectedCardTransactionsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Card details'),
-      ),
+      appBar: AppBar(title: const Text('Card details')),
       body: SafeArea(
         child: cardsAsync.when(
           data: (List<Card> cards) {
@@ -67,32 +65,24 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               children: [
                 _HeroCard(
                   card: card,
-                  onShowDetails: () => _showPreviewAction(context, 'Full card number'),
+                  onShowDetails: () =>
+                      _showPreviewAction(context, 'Full card number'),
                 ),
                 const SizedBox(height: 24),
                 _SectionCard(
                   title: 'Overview',
                   child: Column(
                     children: [
-                      _InfoRow(
-                        label: 'Cardholder',
-                        value: card.holderName,
-                      ),
+                      _InfoRow(label: 'Cardholder', value: card.holderName),
                       const Divider(),
-                      _InfoRow(
-                        label: 'Account',
-                        value: card.iban,
-                      ),
+                      _InfoRow(label: 'Account', value: card.iban),
                       const Divider(),
                       _InfoRow(
                         label: 'Status',
                         value: card.isPrimary ? 'Primary card' : 'Active card',
                       ),
                       const Divider(),
-                      _InfoRow(
-                        label: 'Reference',
-                        value: card.id,
-                      ),
+                      _InfoRow(label: 'Reference', value: card.id),
                     ],
                   ),
                 ),
@@ -106,22 +96,26 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                       _ActionChip(
                         icon: Icons.lock_outline_rounded,
                         label: 'Freeze card',
-                        onPressed: () => _showPreviewAction(context, 'Freeze card'),
+                        onPressed: () =>
+                            _showPreviewAction(context, 'Freeze card'),
                       ),
                       _ActionChip(
                         icon: Icons.pin_outlined,
                         label: 'Reveal PIN',
-                        onPressed: () => _showPreviewAction(context, 'Reveal PIN'),
+                        onPressed: () =>
+                            _showPreviewAction(context, 'Reveal PIN'),
                       ),
                       _ActionChip(
                         icon: Icons.swap_horiz_rounded,
                         label: 'Set limits',
-                        onPressed: () => _showPreviewAction(context, 'Spending limits'),
+                        onPressed: () =>
+                            _showPreviewAction(context, 'Spending limits'),
                       ),
                       _ActionChip(
                         icon: Icons.travel_explore_outlined,
                         label: 'Travel notice',
-                        onPressed: () => _showPreviewAction(context, 'Travel notice'),
+                        onPressed: () =>
+                            _showPreviewAction(context, 'Travel notice'),
                       ),
                     ],
                   ),
@@ -137,13 +131,16 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                       ? const _EmptyTransactionsState()
                       : Column(
                           children: [
-                            for (int index = 0;
-                                index < cardTransactions.length && index < 3;
-                                index++) ...[
+                            for (
+                              int index = 0;
+                              index < cardTransactions.length && index < 3;
+                              index++
+                            ) ...[
                               _TransactionPreviewRow(
                                 transaction: cardTransactions[index],
                               ),
-                              if (index < cardTransactions.length - 1 && index < 2)
+                              if (index < cardTransactions.length - 1 &&
+                                  index < 2)
                                 const Divider(),
                             ],
                           ],
@@ -190,10 +187,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
 }
 
 class _HeroCard extends StatelessWidget {
-  const _HeroCard({
-    required this.card,
-    required this.onShowDetails,
-  });
+  const _HeroCard({required this.card, required this.onShowDetails});
 
   final Card card;
   final VoidCallback onShowDetails;
@@ -224,15 +218,9 @@ class _HeroCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      card.label,
-                      style: theme.textTheme.titleLarge,
-                    ),
+                    Text(card.label, style: theme.textTheme.titleLarge),
                     const SizedBox(height: 6),
-                    Text(
-                      card.holderName,
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    Text(card.holderName, style: theme.textTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -259,9 +247,7 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 40),
           Text(
             card.maskedNumber,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              letterSpacing: 1.8,
-            ),
+            style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 1.8),
           ),
           const SizedBox(height: 16),
           Text(
@@ -269,10 +255,7 @@ class _HeroCard extends StatelessWidget {
             style: theme.textTheme.displaySmall?.copyWith(fontSize: 30),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Available balance',
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text('Available balance', style: theme.textTheme.bodyMedium),
           const SizedBox(height: 28),
           OutlinedButton.icon(
             onPressed: onShowDetails,
@@ -286,11 +269,7 @@ class _HeroCard extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.child,
-    this.trailing,
-  });
+  const _SectionCard({required this.title, required this.child, this.trailing});
 
   final String title;
   final Widget child;
@@ -314,12 +293,7 @@ class _SectionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleLarge,
-                  ),
-                ),
+                Expanded(child: Text(title, style: theme.textTheme.titleLarge)),
                 if (trailing != null) trailing!,
               ],
             ),
@@ -333,10 +307,7 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
+  const _InfoRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -350,12 +321,7 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
+          Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
           const SizedBox(width: 16),
           Flexible(
             child: Text(
@@ -422,20 +388,15 @@ class _TransactionPreviewRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: colorScheme.outline),
             ),
-            child: Icon(
-              isPositive ? Icons.south_west_rounded : Icons.north_east_rounded,
-              color: isPositive ? theme.successColor : colorScheme.primary,
-            ),
+            alignment: Alignment.center,
+            child: Text(transaction.emoji, style: theme.textTheme.titleMedium),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  transaction.title,
-                  style: theme.textTheme.titleMedium,
-                ),
+                Text(transaction.title, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 4),
                 Text(
                   '${transaction.subtitle} • ${timeFormat.format(transaction.date)}',

@@ -12,9 +12,15 @@ import '../../providers/selected_card_provider.dart';
 import '../../providers/transaction_provider.dart';
 
 final _transferAmountProvider = StateProvider<String>((ref) => '1250.00');
-final _transferRecipientProvider = StateProvider<String>((ref) => 'Zurich Family Office');
-final _transferIbanProvider = StateProvider<String>((ref) => 'CH56 0483 5012 3498 7000 9');
-final _transferNoteProvider = StateProvider<String>((ref) => 'Consulting retainer');
+final _transferRecipientProvider = StateProvider<String>(
+  (ref) => 'Zurich Family Office',
+);
+final _transferIbanProvider = StateProvider<String>(
+  (ref) => 'CH56 0483 5012 3498 7000 9',
+);
+final _transferNoteProvider = StateProvider<String>(
+  (ref) => 'Consulting retainer',
+);
 
 class TransferScreen extends ConsumerWidget {
   const TransferScreen({super.key});
@@ -29,8 +35,11 @@ class TransferScreen extends ConsumerWidget {
     final String recipient = ref.watch(_transferRecipientProvider);
     final String iban = ref.watch(_transferIbanProvider);
     final String note = ref.watch(_transferNoteProvider);
-    final AsyncValue<List<Transaction>> transactionAsync = ref.watch(transactionProvider);
-    final bool isSubmitting = transactionAsync.isRefreshing || transactionAsync.isReloading;
+    final AsyncValue<List<Transaction>> transactionAsync = ref.watch(
+      transactionProvider,
+    );
+    final bool isSubmitting =
+        transactionAsync.isRefreshing || transactionAsync.isReloading;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Transfer funds')),
@@ -54,7 +63,10 @@ class TransferScreen extends ConsumerWidget {
                 child: ListView(
                   padding: AppLayout.screenPadding,
                   children: <Widget>[
-                    Text('Domestic transfer', style: theme.textTheme.displaySmall),
+                    Text(
+                      'Domestic transfer',
+                      style: theme.textTheme.displaySmall,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       'Create a payment from the selected account and add it to recent activity.',
@@ -65,7 +77,10 @@ class TransferScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text('Source account', style: theme.textTheme.titleLarge),
+                          Text(
+                            'Source account',
+                            style: theme.textTheme.titleLarge,
+                          ),
                           const SizedBox(height: 18),
                           DropdownButtonFormField<String>(
                             initialValue: sourceCard.id,
@@ -73,7 +88,9 @@ class TransferScreen extends ConsumerWidget {
                                 .map(
                                   (Card card) => DropdownMenuItem<String>(
                                     value: card.id,
-                                    child: Text('${card.label} - ${card.maskedNumber}'),
+                                    child: Text(
+                                      '${card.label} - ${card.maskedNumber}',
+                                    ),
                                   ),
                                 )
                                 .toList(growable: false),
@@ -81,56 +98,75 @@ class TransferScreen extends ConsumerWidget {
                               if (value == null) {
                                 return;
                               }
-                              ref.read(selectedCardIdProvider.notifier).state = value;
+                              ref.read(selectedCardIdProvider.notifier).state =
+                                  value;
                             },
-                            decoration: const InputDecoration(labelText: 'Debit from'),
+                            decoration: const InputDecoration(
+                              labelText: 'Debit from',
+                            ),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
                             initialValue: recipient,
-                            decoration: const InputDecoration(labelText: 'Recipient'),
+                            decoration: const InputDecoration(
+                              labelText: 'Recipient',
+                            ),
                             onChanged: (String value) {
-                              ref.read(_transferRecipientProvider.notifier).state = value;
+                              ref
+                                      .read(_transferRecipientProvider.notifier)
+                                      .state =
+                                  value;
                             },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
                             initialValue: iban,
-                            decoration: const InputDecoration(labelText: 'Recipient IBAN'),
+                            decoration: const InputDecoration(
+                              labelText: 'Recipient IBAN',
+                            ),
                             onChanged: (String value) {
-                              ref.read(_transferIbanProvider.notifier).state = value;
+                              ref.read(_transferIbanProvider.notifier).state =
+                                  value;
                             },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
                             initialValue: amount,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Amount',
                               suffixText: sourceCard.currency,
                             ),
                             onChanged: (String value) {
-                              ref.read(_transferAmountProvider.notifier).state = value;
+                              ref.read(_transferAmountProvider.notifier).state =
+                                  value;
                             },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
                             initialValue: note,
                             maxLines: 3,
-                            decoration: const InputDecoration(labelText: 'Reference'),
+                            decoration: const InputDecoration(
+                              labelText: 'Reference',
+                            ),
                             onChanged: (String value) {
-                              ref.read(_transferNoteProvider.notifier).state = value;
+                              ref.read(_transferNoteProvider.notifier).state =
+                                  value;
                             },
                           ),
                           const SizedBox(height: 24),
-                           FilledButton(
-                             onPressed: isSubmitting
-                                 ? null
-                                 : () async {
-                                    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-                                    final double? parsedAmount = double.tryParse(
-                                      amount.replaceAll(',', '.'),
-                                    );
+                          FilledButton(
+                            onPressed: isSubmitting
+                                ? null
+                                : () async {
+                                    final ScaffoldMessengerState messenger =
+                                        ScaffoldMessenger.of(context);
+                                    final double? parsedAmount =
+                                        double.tryParse(
+                                          amount.replaceAll(',', '.'),
+                                        );
 
                                     if (recipient.trim().isEmpty ||
                                         iban.trim().isEmpty ||
@@ -138,16 +174,19 @@ class TransferScreen extends ConsumerWidget {
                                         parsedAmount == null ||
                                         parsedAmount <= 0) {
                                       messenger
-                                         ..hideCurrentSnackBar()
-                                         ..showSnackBar(
-                                           SnackBar(
-                                             backgroundColor: colorScheme.primary,
-                                             content: const Text(
-                                               'Fill all transfer fields with valid values.',
-                                               style: TextStyle(color: Colors.white),
-                                             ),
-                                           ),
-                                         );
+                                        ..hideCurrentSnackBar()
+                                        ..showSnackBar(
+                                          SnackBar(
+                                            backgroundColor:
+                                                colorScheme.primary,
+                                            content: const Text(
+                                              'Fill all transfer fields with valid values.',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        );
                                       return;
                                     }
 
@@ -159,9 +198,11 @@ class TransferScreen extends ConsumerWidget {
                                       amount: -parsedAmount,
                                       currency: sourceCard.currency,
                                       date: DateTime.now(),
+                                      emoji: '💸',
                                     );
 
-                                     await AppDataRepository.instance.addTransaction(tx);
+                                    await AppDataRepository.instance
+                                        .addTransaction(tx);
                                     ref.invalidate(transactionProvider);
 
                                     if (!context.mounted) {
@@ -169,20 +210,22 @@ class TransferScreen extends ConsumerWidget {
                                     }
 
                                     messenger
-                                       ..hideCurrentSnackBar()
-                                       ..showSnackBar(
-                                         SnackBar(
-                                           backgroundColor: colorScheme.primary,
-                                           content: Text(
-                                             'Transfer booked: ${currencyFormat.format(parsedAmount)} to ${recipient.trim()}.',
-                                             style: const TextStyle(color: Colors.white),
-                                           ),
-                                         ),
+                                      ..hideCurrentSnackBar()
+                                      ..showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: colorScheme.primary,
+                                          content: Text(
+                                            'Transfer booked: ${currencyFormat.format(parsedAmount)} to ${recipient.trim()}.',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
                                       );
                                     context.go('/transactions');
                                   },
                             child: const Text('Submit transfer'),
-                           ),
+                          ),
                         ],
                       ),
                     ),
@@ -192,7 +235,10 @@ class TransferScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text('Available balance', style: theme.textTheme.bodyMedium),
+                          Text(
+                            'Available balance',
+                            style: theme.textTheme.bodyMedium,
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             currencyFormat.format(sourceCard.balance),
@@ -249,10 +295,7 @@ class _FlatSection extends StatelessWidget {
         borderRadius: AppLayout.cardRadius,
         side: BorderSide(color: colorScheme.outline),
       ),
-      child: Padding(
-        padding: padding,
-        child: child,
-      ),
+      child: Padding(padding: padding, child: child),
     );
   }
 }

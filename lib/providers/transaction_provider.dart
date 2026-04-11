@@ -21,9 +21,14 @@ final selectedCardTransactionsProvider = Provider<List<Transaction>>((ref) {
   return ref.watch(transactionProvider).valueOrNull ?? const <Transaction>[];
 });
 
-final groupedTransactionsProvider = Provider<Map<DateTime, List<Transaction>>>((ref) {
-  final List<Transaction> transactions = ref.watch(selectedCardTransactionsProvider);
-  final Map<DateTime, List<Transaction>> grouped = <DateTime, List<Transaction>>{};
+final groupedTransactionsProvider = Provider<Map<DateTime, List<Transaction>>>((
+  ref,
+) {
+  final List<Transaction> transactions = ref.watch(
+    selectedCardTransactionsProvider,
+  );
+  final Map<DateTime, List<Transaction>> grouped =
+      <DateTime, List<Transaction>>{};
 
   for (final Transaction transaction in transactions) {
     final DateTime key = DateTime(

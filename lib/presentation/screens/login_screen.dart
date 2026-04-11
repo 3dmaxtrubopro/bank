@@ -21,7 +21,8 @@ class LoginScreen extends ConsumerWidget {
     final password = ref.watch(_passwordProvider);
     final biometricsEnabled = ref.watch(_biometricEnabledProvider);
     final biometricAvailability = ref.watch(biometricAvailabilityProvider);
-    final biometricsAvailable = biometricAvailability.valueOrNull?.isAvailable ?? false;
+    final biometricsAvailable =
+        biometricAvailability.valueOrNull?.isAvailable ?? false;
 
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (!context.mounted) {
@@ -30,7 +31,8 @@ class LoginScreen extends ConsumerWidget {
 
       final messenger = ScaffoldMessenger.of(context);
 
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(
@@ -68,7 +70,7 @@ class LoginScreen extends ConsumerWidget {
                     ),
                     alignment: Alignment.center,
                     child: const Text(
-                      'UBS',
+                      'PF',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -79,8 +81,10 @@ class LoginScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 28),
                   Text(
-                    'Private Banking',
-                    style: theme.textTheme.bodyMedium?.copyWith(letterSpacing: 1.1),
+                    'PostFinance App',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      letterSpacing: 1.1,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text('Sign in', style: theme.textTheme.displayLarge),
@@ -96,7 +100,10 @@ class LoginScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Credentials', style: theme.textTheme.titleLarge),
+                          Text(
+                            'Credentials',
+                            style: theme.textTheme.titleLarge,
+                          ),
                           const SizedBox(height: 20),
                           TextFormField(
                             initialValue: username,
@@ -106,7 +113,8 @@ class LoginScreen extends ConsumerWidget {
                               hintText: 'alex.morgan',
                             ),
                             onChanged: (value) {
-                              ref.read(_usernameProvider.notifier).state = value;
+                              ref.read(_usernameProvider.notifier).state =
+                                  value;
                               ref.read(authProvider.notifier).clearError();
                             },
                           ),
@@ -120,14 +128,18 @@ class LoginScreen extends ConsumerWidget {
                               hintText: 'Enter password',
                             ),
                             onChanged: (value) {
-                              ref.read(_passwordProvider.notifier).state = value;
+                              ref.read(_passwordProvider.notifier).state =
+                                  value;
                               ref.read(authProvider.notifier).clearError();
                             },
                           ),
                           if (biometricAvailability.hasValue) ...[
                             const SizedBox(height: 16),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 borderRadius: AppLayout.inputRadius,
                                 border: Border.all(color: colorScheme.outline),
@@ -142,30 +154,44 @@ class LoginScreen extends ConsumerWidget {
                                       ? 'Use local biometric authentication'
                                       : 'Biometrics are unavailable on this device',
                                 ),
-                                onChanged: (!authState.isProcessing && biometricsAvailable)
+                                onChanged:
+                                    (!authState.isProcessing &&
+                                        biometricsAvailable)
                                     ? (value) {
-                                        ref.read(_biometricEnabledProvider.notifier).state = value;
+                                        ref
+                                                .read(
+                                                  _biometricEnabledProvider
+                                                      .notifier,
+                                                )
+                                                .state =
+                                            value;
                                       }
                                     : null,
                               ),
                             ),
                           ],
                           const SizedBox(height: 24),
-                           FilledButton(
-                             onPressed: authState.isProcessing
-                                 ? null
-                                 : () {
-                                    ref.read(authProvider.notifier).signIn(
+                          FilledButton(
+                            onPressed: authState.isProcessing
+                                ? null
+                                : () {
+                                    ref
+                                        .read(authProvider.notifier)
+                                        .signIn(
                                           username: username,
                                           password: password,
-                                          useBiometrics: biometricsAvailable && biometricsEnabled,
+                                          useBiometrics:
+                                              biometricsAvailable &&
+                                              biometricsEnabled,
                                         );
                                   },
                             child: authState.isProcessing
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Text('Sign in'),
                           ),
@@ -175,7 +201,9 @@ class LoginScreen extends ConsumerWidget {
                               onPressed: authState.isProcessing
                                   ? null
                                   : () {
-                                      ref.read(authProvider.notifier).authenticateOnlyBiometrics();
+                                      ref
+                                          .read(authProvider.notifier)
+                                          .authenticateOnlyBiometrics();
                                     },
                               icon: const Icon(Icons.fingerprint_rounded),
                               label: const Text('Sign in with biometrics'),
@@ -211,7 +239,10 @@ class LoginScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Secure access', style: theme.textTheme.titleMedium),
+                                Text(
+                                  'Secure access',
+                                  style: theme.textTheme.titleMedium,
+                                ),
                                 const SizedBox(height: 6),
                                 Text(
                                   'Use the test credentials and biometric authentication where supported on your device.',

@@ -7,6 +7,7 @@ class Transaction {
     required this.amount,
     required this.currency,
     required this.date,
+    this.emoji = '💳',
   });
 
   final String id;
@@ -16,4 +17,5 @@ class Transaction {
   final double amount;
   final String currency;
   final DateTime date;
+  final String emoji;
 }

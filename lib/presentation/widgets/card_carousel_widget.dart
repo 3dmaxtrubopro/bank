@@ -21,7 +21,8 @@ class CardCarouselWidget extends ConsumerWidget {
     return cards.when(
       data: (items) => _CardCarouselContent(cards: items),
       loading: () => const _CardCarouselSkeleton(),
-      error: (error, stackTrace) => _CardCarouselError(message: error.toString()),
+      error: (error, stackTrace) =>
+          _CardCarouselError(message: error.toString()),
     );
   }
 }
@@ -86,13 +87,14 @@ class _CardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     final formatter = NumberFormat.currency(
       locale: AppConstants.currencyLocale,
       symbol: '${card.currency} ',
       decimalDigits: 2,
     );
-    final borderColor = isSelected ? AppColors.alert : AppColors.line;
+    final borderColor = isSelected ? colorScheme.primary : colorScheme.outline;
     final borderWidth = isSelected ? 2.0 : 1.0;
 
     return Material(
@@ -102,12 +104,9 @@ class _CardTile extends StatelessWidget {
         onTap: onTap,
         child: Ink(
           decoration: BoxDecoration(
-            color: AppColors.panel,
+            color: colorScheme.surface,
             borderRadius: AppLayout.cardRadius,
-            border: Border.all(
-              color: borderColor,
-              width: borderWidth,
-            ),
+            border: Border.all(color: borderColor, width: borderWidth),
           ),
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -123,7 +122,7 @@ class _CardTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.titleLarge?.copyWith(
-                          color: AppColors.ink,
+                          color: colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -136,14 +135,14 @@ class _CardTile extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3F2),
+                          color: colorScheme.primary.withValues(alpha: 0.16),
                           borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: AppColors.alert),
+                          border: Border.all(color: colorScheme.primary),
                         ),
                         child: Text(
                           'PRIMARY',
                           style: textTheme.labelLarge?.copyWith(
-                            color: AppColors.alert,
+                            color: colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.3,
                           ),
@@ -155,7 +154,7 @@ class _CardTile extends StatelessWidget {
                 Text(
                   'Available balance',
                   style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.steel,
+                    color: theme.textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -166,7 +165,7 @@ class _CardTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   softWrap: false,
                   style: textTheme.headlineMedium?.copyWith(
-                    color: AppColors.ink,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                     height: 1.0,
                   ),
@@ -189,7 +188,7 @@ class _CardTile extends StatelessWidget {
                               height: 1.1,
                             ),
                             style: textTheme.titleMedium?.copyWith(
-                              color: AppColors.ink,
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.2,
                               height: 1.0,
@@ -201,7 +200,7 @@ class _CardTile extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: textTheme.bodyMedium?.copyWith(
-                              color: AppColors.steel,
+                              color: theme.textTheme.bodyMedium?.color,
                             ),
                           ),
                         ],
@@ -213,8 +212,8 @@ class _CardTile extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: onDetailsTap,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.alert,
-                          side: const BorderSide(color: AppColors.alert),
+                          foregroundColor: colorScheme.primary,
+                          side: BorderSide(color: colorScheme.primary),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -258,9 +257,9 @@ class _CardCarouselSkeleton extends StatelessWidget {
             child: Container(
               width: 308,
               decoration: BoxDecoration(
-                color: AppColors.panel,
+                color: colorScheme.surface,
                 borderRadius: AppLayout.cardRadius,
-                border: Border.all(color: AppColors.line),
+                border: Border.all(color: colorScheme.outline),
               ),
             ),
           );
@@ -278,13 +277,14 @@ class _CardCarouselError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.panel,
+        color: colorScheme.surface,
         borderRadius: AppLayout.cardRadius,
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Text(
         'Unable to load cards: $message',
@@ -306,7 +306,10 @@ String _formatMaskedNumber(String maskedNumber) {
   final groups = <String>['****', '****', '****', visibleDigits];
 
   final originalMaskCount = RegExp(r'\*').allMatches(maskedNumber).length;
-  final hiddenGroupCount = math.max(1, math.min(3, (originalMaskCount / 4).round()));
+  final hiddenGroupCount = math.max(
+    1,
+    math.min(3, (originalMaskCount / 4).round()),
+  );
 
   return groups.take(hiddenGroupCount + 1).join(' ');
 }

@@ -182,7 +182,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isProcessing: false,
         biometricAttempted: true,
         errorMessage:
-            availability.errorMessage ?? _availabilityMessage(availability.status),
+            availability.errorMessage ??
+            _availabilityMessage(availability.status),
       );
       return false;
     }
@@ -270,6 +271,8 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(localAuth, routerRefreshNotifier);
 });
 
-final biometricAvailabilityProvider = FutureProvider<BiometricAvailability>((ref) {
+final biometricAvailabilityProvider = FutureProvider<BiometricAvailability>((
+  ref,
+) {
   return ref.watch(authProvider.notifier).getBiometricAvailability();
 });

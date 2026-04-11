@@ -25,8 +25,5 @@ final selectedCardProvider = Provider<Card?>((ref) {
     }
   }
 
-  return cards.firstWhere(
-    (card) => card.isPrimary,
-    orElse: () => cards.first,
-  );
+  return cards.firstWhere((card) => card.isPrimary, orElse: () => cards.first);
 });
