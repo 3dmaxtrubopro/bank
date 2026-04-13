@@ -102,13 +102,13 @@ abstract final class AppTheme {
 
   static ThemeData get dark {
     const postFinanceYellow = Color(0xFFFFCC00);
-    const ink = Color(0xFFF6F6F4);
-    const muted = Color(0xFFB7B7B4);
-    const line = Color(0xFF323232);
-    const lineSoft = Color(0xFF252525);
-    const background = Color(0xFF101010);
-    const surface = Color(0xFF181818);
-    const surfaceMuted = Color(0xFF242424);
+    const ink = Color(0xFFE7F0EC);
+    const muted = Color(0xFFA8BAB4);
+    const line = Color(0xFF1D4549);
+    const lineSoft = Color(0xFF14393C);
+    const background = Color(0xFF03282C);
+    const surface = Color(0xFF063237);
+    const surfaceMuted = Color(0xFF0C3A3E);
     const positive = Color(0xFF5AD18A);
     const negative = Color(0xFFFF7A70);
 

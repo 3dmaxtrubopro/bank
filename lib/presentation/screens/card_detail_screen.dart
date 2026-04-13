@@ -89,34 +89,60 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 _SectionCard(
-                  title: 'Controls',
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
+                  title: 'Actions',
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _ActionChip(
+                      _RoundAction(
                         icon: Icons.lock_outline_rounded,
-                        label: 'Freeze card',
-                        onPressed: () =>
-                            _showPreviewAction(context, 'Freeze card'),
+                        label: 'Bloquer',
+                        selected: true,
+                        onTap: () => _showPreviewAction(context, 'Freeze card'),
                       ),
-                      _ActionChip(
+                      _RoundAction(
+                        icon: Icons.credit_card_outlined,
+                        label: 'Remplacer',
+                        onTap: () =>
+                            _showPreviewAction(context, 'Replace card'),
+                      ),
+                      _RoundAction(
                         icon: Icons.pin_outlined,
-                        label: 'Reveal PIN',
-                        onPressed: () =>
-                            _showPreviewAction(context, 'Reveal PIN'),
+                        label: 'NIP',
+                        onTap: () =>
+                            _showPreviewAction(context, 'Replacement PIN'),
                       ),
-                      _ActionChip(
-                        icon: Icons.swap_horiz_rounded,
-                        label: 'Set limits',
-                        onPressed: () =>
-                            _showPreviewAction(context, 'Spending limits'),
+                      _RoundAction(
+                        icon: Icons.visibility_outlined,
+                        label: 'Détails',
+                        onTap: () =>
+                            _showPreviewAction(context, 'Card details'),
                       ),
-                      _ActionChip(
-                        icon: Icons.travel_explore_outlined,
-                        label: 'Travel notice',
-                        onPressed: () =>
-                            _showPreviewAction(context, 'Travel notice'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: 'Paramètres de la carte',
+                  child: Column(
+                    children: [
+                      _SettingRow(
+                        title: 'Limites des cartes',
+                        subtitle:
+                            'Fixer des limites pour les retraits et les achats',
+                        onTap: () => context.go('/card/${card.id}/limits'),
+                      ),
+                      const Divider(),
+                      _SettingRow(
+                        title: '3-D Secure est activé',
+                        subtitle:
+                            'Votre carte est activée pour les achats en ligne',
+                        onTap: () => _showPreviewAction(context, '3-D Secure'),
+                      ),
+                      const Divider(),
+                      _SettingRow(
+                        title: 'Le paiement sans contact est activé',
+                        subtitle: 'Paiement sans PIN',
+                        onTap: () => _showPreviewAction(context, 'Contactless'),
                       ),
                     ],
                   ),
@@ -342,25 +368,90 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _ActionChip extends StatelessWidget {
-  const _ActionChip({
+class _RoundAction extends StatelessWidget {
+  const _RoundAction({
     required this.icon,
     required this.label,
-    required this.onPressed,
+    required this.onTap,
+    this.selected = false,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback onTap;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return ActionChip(
-      avatar: Icon(icon, size: 18, color: theme.colorScheme.primary),
-      label: Text(label),
-      onPressed: onPressed,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Column(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: selected
+                  ? colorScheme.primary
+                  : colorScheme.surfaceContainerHighest,
+              border: Border.all(color: colorScheme.outline),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: 20,
+              color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: theme.textTheme.labelMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingRow extends StatelessWidget {
+  const _SettingRow({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Icon(Icons.edit_outlined, size: 18),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'presentation/screens/card_detail_screen.dart';
+import 'presentation/screens/card_limits_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/setup_pin_screen.dart';
@@ -65,44 +67,73 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: <RouteBase>[
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/login',
+        pageBuilder: (context, state) =>
+            _buildTransitionPage(state: state, child: const LoginScreen()),
+      ),
       GoRoute(
         path: '/setup-pin',
-        builder: (context, state) => const SetupPinScreen(),
+        pageBuilder: (context, state) =>
+            _buildTransitionPage(state: state, child: const SetupPinScreen()),
       ),
       GoRoute(
         path: '/unlock',
-        builder: (context, state) => const UnlockScreen(),
+        pageBuilder: (context, state) =>
+            _buildTransitionPage(state: state, child: const UnlockScreen()),
       ),
       GoRoute(
         path: '/',
-        builder: (context, state) => const HomeScreen(),
+        pageBuilder: (context, state) =>
+            _buildTransitionPage(state: state, child: const HomeScreen()),
         routes: <RouteBase>[
           GoRoute(
             path: 'transactions',
-            builder: (context, state) => const TransactionsScreen(),
+            pageBuilder: (context, state) => _buildTransitionPage(
+              state: state,
+              child: const TransactionsScreen(),
+            ),
           ),
           GoRoute(
             path: 'transfer',
-            builder: (context, state) => TransferScreen(
-              initialRecipient: state.uri.queryParameters['recipient'],
-              initialIban: state.uri.queryParameters['iban'],
-              initialNote: state.uri.queryParameters['note'],
-              initialAmount: state.uri.queryParameters['amount'],
+            pageBuilder: (context, state) => _buildTransitionPage(
+              state: state,
+              child: TransferScreen(
+                initialRecipient: state.uri.queryParameters['recipient'],
+                initialIban: state.uri.queryParameters['iban'],
+                initialNote: state.uri.queryParameters['note'],
+                initialAmount: state.uri.queryParameters['amount'],
+              ),
             ),
           ),
           GoRoute(
             path: 'transaction/:transactionId',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final transactionId = state.pathParameters['transactionId'] ?? '';
-              return TransactionDetailScreen(transactionId: transactionId);
+              return _buildTransitionPage(
+                state: state,
+                child: TransactionDetailScreen(transactionId: transactionId),
+              );
             },
           ),
           GoRoute(
             path: 'card/:cardId',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final cardId = state.pathParameters['cardId'] ?? 'primary';
-              return CardDetailScreen(cardId: cardId);
+              return _buildTransitionPage(
+                state: state,
+                child: CardDetailScreen(cardId: cardId),
+              );
+            },
+          ),
+          GoRoute(
+            path: 'card/:cardId/limits',
+            pageBuilder: (context, state) {
+              final cardId = state.pathParameters['cardId'] ?? 'primary';
+              return _buildTransitionPage(
+                state: state,
+                child: CardLimitsScreen(cardId: cardId),
+              );
             },
           ),
         ],
@@ -110,3 +141,30 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+CustomTransitionPage<void> _buildTransitionPage({
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, pageChild) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
+      final offsetTween = Tween<Offset>(
+        begin: const Offset(0.04, 0),
+        end: Offset.zero,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: offsetTween.animate(curved),
+          child: pageChild,
+        ),
+      );
+    },
+  );
+}
