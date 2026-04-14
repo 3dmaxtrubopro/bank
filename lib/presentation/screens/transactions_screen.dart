@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../core/app_icons.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../data/models/transaction.dart';
@@ -23,7 +24,7 @@ class TransactionsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Transactions')),
       body: SafeArea(
         child: Padding(
-          padding: AppLayout.screenPadding,
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
           child: transactionsAsync.when(
             data: (_) {
               final groupedTransactions = ref.watch(
@@ -35,21 +36,18 @@ class TransactionsScreen extends ConsumerWidget {
 
               return ListView.separated(
                 itemCount: entries.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(height: 24),
+                separatorBuilder: (_, __) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return _Header(
                       title: selectedCard == null
-                          ? 'Recent activity'
-                          : '${selectedCard.label} activity',
-                      subtitle: selectedCard == null
-                          ? 'A summary of incoming and outgoing transactions.'
-                          : 'Transactions for ${selectedCard.maskedNumber}.',
+                          ? 'Historique'
+                          : 'Historique ${selectedCard.maskedNumber}',
+                      subtitle: 'Liste des paiements et transferts récents.',
                     );
                   }
 
                   final entry = entries[index - 1];
-
                   return _TransactionSection(
                     date: entry.key,
                     transactions: entry.value,
@@ -87,9 +85,9 @@ class _Header extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: theme.textTheme.displaySmall),
-        const SizedBox(height: 8),
-        Text(subtitle, style: theme.textTheme.bodyMedium),
+        Text(title, style: theme.textTheme.titleLarge),
+        const SizedBox(height: 4),
+        Text(subtitle, style: theme.textTheme.bodySmall),
       ],
     );
   }
@@ -109,37 +107,32 @@ class _TransactionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final headingFormat = DateFormat('dd MMM yyyy');
+    final headingFormat = DateFormat('dd.MM.yyyy');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(headingFormat.format(date), style: theme.textTheme.titleLarge),
-        const SizedBox(height: 12),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: AppLayout.cardRadius,
-            border: Border.fromBorderSide(
-              BorderSide(color: colorScheme.outline),
-            ),
-          ),
-          child: Column(
-            children: [
-              for (var index = 0; index < transactions.length; index++) ...[
-                _TransactionRow(
-                  transaction: transactions[index],
-                  onTap: () {
-                    onOpenTransaction(transactions[index].id);
-                  },
-                ),
-                if (index != transactions.length - 1)
-                  const Divider(height: 1, thickness: 1),
-              ],
-            ],
+        Text(
+          headingFormat.format(date),
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
           ),
         ),
+        const SizedBox(height: 4),
+        for (var index = 0; index < transactions.length; index++) ...[
+          _TransactionRow(
+            transaction: transactions[index],
+            onTap: () {
+              onOpenTransaction(transactions[index].id);
+            },
+          ),
+          if (index != transactions.length - 1)
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: theme.colorScheme.outline.withValues(alpha: 0.45),
+            ),
+        ],
       ],
     );
   }
@@ -156,70 +149,30 @@ class _TransactionRow extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isPositive = transaction.amount >= 0;
-    final amountFormat = NumberFormat.currency(
-      locale: AppConstants.currencyLocale,
-      symbol: '${transaction.currency} ',
-      decimalDigits: 2,
-    );
-    final timeFormat = DateFormat('HH:mm');
 
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              alignment: Alignment.center,
-              child: Text(transaction.emoji, style: theme.textTheme.titleLarge),
-            ),
-            const SizedBox(width: 14),
+            _MerchantIcon(transaction: transaction),
+            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          transaction.title,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _TransactionStatusBadge(status: transaction.status),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(transaction.subtitle, style: theme.textTheme.bodyMedium),
-                ],
+              child: Text(
+                transaction.title,
+                style: theme.textTheme.titleMedium?.copyWith(height: 1.25),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  amountFormat.format(transaction.amount),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: isPositive
-                        ? theme.successColor
-                        : colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  timeFormat.format(transaction.date),
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
+            const SizedBox(width: 12),
+            Text(
+              _compactAmount(transaction.amount),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: isPositive ? theme.successColor : colorScheme.onSurface,
+              ),
             ),
           ],
         ),
@@ -228,34 +181,71 @@ class _TransactionRow extends StatelessWidget {
   }
 }
 
-class _TransactionStatusBadge extends StatelessWidget {
-  const _TransactionStatusBadge({required this.status});
+class _MerchantIcon extends StatelessWidget {
+  const _MerchantIcon({required this.transaction});
 
-  final TransactionStatus status;
+  final Transaction transaction;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isPending = status == TransactionStatus.pending;
+    final title = transaction.title.toLowerCase();
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isPending
-            ? colorScheme.primary.withValues(alpha: 0.18)
-            : colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        isPending ? 'Pending' : 'Booked',
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: isPending
-              ? colorScheme.onSurface
-              : theme.textTheme.bodyMedium?.color,
-          fontWeight: FontWeight.w700,
+    if (title.contains('apple')) {
+      return const _BrandCircle(
+        background: Color(0xFF111111),
+        child: Icon(AppIcons.apple, color: Colors.white, size: 20),
+      );
+    }
+    if (title.contains('twint')) {
+      return _BrandCircle(
+        background: const Color(0xFF0A0A0A),
+        child: Text(
+          'T',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
+      );
+    }
+    if (title.contains('kiosk')) {
+      return _BrandCircle(
+        background: const Color(0xFFE94352),
+        child: Text(
+          'K',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
+
+    return _BrandCircle(
+      background: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Icon(
+        AppIcons.wallet,
+        color: Theme.of(context).colorScheme.primary,
+        size: 18,
       ),
+    );
+  }
+}
+
+class _BrandCircle extends StatelessWidget {
+  const _BrandCircle({required this.background, required this.child});
+
+  final Color background;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: child,
     );
   }
 }
@@ -270,11 +260,11 @@ class _TransactionsSkeleton extends StatelessWidget {
     return ListView(
       children: [
         const _Header(
-          title: 'Recent activity',
-          subtitle: 'A summary of incoming and outgoing transactions.',
+          title: 'Historique',
+          subtitle: 'Liste des paiements et transferts récents.',
         ),
-        const SizedBox(height: 24),
-        for (var section = 0; section < 2; section++) ...[
+        const SizedBox(height: 20),
+        for (var section = 0; section < 3; section++) ...[
           Shimmer.fromColors(
             baseColor: colorScheme.outlineVariant,
             highlightColor: colorScheme.surfaceContainerHighest,
@@ -282,27 +272,36 @@ class _TransactionsSkeleton extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 120,
-                  height: 20,
+                  width: 92,
+                  height: 12,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Container(
-                  height: 184,
-                  decoration: const BoxDecoration(
+                  height: 84,
+                  decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: AppLayout.cardRadius,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ],
       ],
     );
   }
+}
+
+String _compactAmount(double amount) {
+  final abs = amount.abs();
+  final formatted = NumberFormat(
+    "0.00",
+    AppConstants.currencyLocale,
+  ).format(abs);
+  return '$formatted${amount >= 0 ? '+' : '-'}';
 }

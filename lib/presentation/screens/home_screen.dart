@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_icons.dart';
 import '../../core/constants.dart';
 import '../../data/models/card.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/card_provider.dart';
 import '../../providers/security_provider.dart';
+import '../../providers/selected_card_provider.dart';
 import '../../providers/theme_mode_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -28,7 +30,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _HomeOverview(
         cardsAsync: cardsAsync,
         onOpenTransfer: () => context.go('/transfer'),
-        onOpenCard: (cardId) => context.go('/card/$cardId'),
+        onOpenCardTransactions: (cardId) {
+          ref.read(selectedCardIdProvider.notifier).state = cardId;
+          context.go('/transactions');
+        },
       ),
       const _PlaceholderSection(
         title: 'Payer',
@@ -38,9 +43,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: 'Investir',
         subtitle: 'Vue portefeuille et performance mensuelle.',
       ),
-      const _PlaceholderSection(
-        title: 'Services',
-        subtitle: 'Services carte, documents et support.',
+      _ServicesSection(
+        cardsAsync: cardsAsync,
+        onOpenCard: (cardId) {
+          ref.read(selectedCardIdProvider.notifier).state = cardId;
+          context.go('/card/$cardId');
+        },
       ),
       _SettingsSection(
         currentThemeMode: ref.watch(themeModeProvider),
@@ -72,28 +80,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         destinations: const [
           material.NavigationDestination(
-            icon: material.Icon(material.Icons.home_outlined),
-            selectedIcon: material.Icon(material.Icons.home_rounded),
+            icon: material.Icon(AppIcons.homeOutlined),
+            selectedIcon: material.Icon(AppIcons.homeFilled),
             label: 'Home',
           ),
           material.NavigationDestination(
-            icon: material.Icon(material.Icons.swap_horiz_rounded),
-            selectedIcon: material.Icon(material.Icons.swap_horiz_rounded),
-            label: 'Payer',
+            icon: material.Icon(AppIcons.payOutlined),
+            selectedIcon: material.Icon(AppIcons.payFilled),
+            label: 'Paiements',
           ),
           material.NavigationDestination(
-            icon: material.Icon(material.Icons.analytics_outlined),
-            selectedIcon: material.Icon(material.Icons.analytics_rounded),
+            icon: material.Icon(AppIcons.insightsOutlined),
+            selectedIcon: material.Icon(AppIcons.insightsFilled),
             label: 'Investir',
           ),
           material.NavigationDestination(
-            icon: material.Icon(material.Icons.shopping_bag_outlined),
-            selectedIcon: material.Icon(material.Icons.shopping_bag_rounded),
-            label: 'Services',
+            icon: material.Icon(AppIcons.servicesOutlined),
+            selectedIcon: material.Icon(AppIcons.servicesFilled),
+            label: 'Shop',
           ),
           material.NavigationDestination(
-            icon: material.Icon(material.Icons.person_outline_rounded),
-            selectedIcon: material.Icon(material.Icons.person_rounded),
+            icon: material.Icon(AppIcons.profileOutlined),
+            selectedIcon: material.Icon(AppIcons.profileFilled),
             label: 'Profil',
           ),
         ],
@@ -106,12 +114,12 @@ class _HomeOverview extends material.StatelessWidget {
   const _HomeOverview({
     required this.cardsAsync,
     required this.onOpenTransfer,
-    required this.onOpenCard,
+    required this.onOpenCardTransactions,
   });
 
   final AsyncValue<List<Card>> cardsAsync;
   final material.VoidCallback onOpenTransfer;
-  final material.ValueChanged<String> onOpenCard;
+  final material.ValueChanged<String> onOpenCardTransactions;
 
   @override
   material.Widget build(material.BuildContext context) {
@@ -179,7 +187,7 @@ class _HomeOverview extends material.StatelessWidget {
                     child: material.Row(
                       children: [
                         material.Icon(
-                          material.Icons.search,
+                          AppIcons.search,
                           size: 16,
                           color: cs.onSurface,
                         ),
@@ -210,23 +218,23 @@ class _HomeOverview extends material.StatelessWidget {
                 mainAxisAlignment: material.MainAxisAlignment.spaceBetween,
                 children: [
                   _QuickActionBubble(
-                    icon: material.Icons.qr_code_scanner_rounded,
+                    icon: AppIcons.scanner,
                     label: 'Scanner',
                     selected: true,
                     onTap: () {},
                   ),
                   _QuickActionBubble(
-                    icon: material.Icons.arrow_forward_rounded,
+                    icon: AppIcons.transfer,
                     label: 'Payer',
                     onTap: onOpenTransfer,
                   ),
                   _QuickActionBubble(
-                    icon: material.Icons.account_balance_wallet_outlined,
+                    icon: AppIcons.wallet,
                     label: 'Transférer',
                     onTap: onOpenTransfer,
                   ),
                   _QuickActionBubble(
-                    icon: material.Icons.bar_chart_rounded,
+                    icon: AppIcons.analytics,
                     label: 'Analyses',
                     onTap: () {},
                   ),
@@ -238,13 +246,13 @@ class _HomeOverview extends material.StatelessWidget {
               delay: 230,
               child: cardsAsync.when(
                 data: (cards) {
-                  final visibleCards = cards.take(2).toList(growable: false);
+                  final visibleCards = cards.take(3).toList(growable: false);
                   final formatter = NumberFormat.currency(
                     locale: AppConstants.currencyLocale,
                     symbol: '',
                     decimalDigits: 2,
                   );
-                  final total = cards.fold<double>(
+                  final total = visibleCards.fold<double>(
                     0,
                     (sum, c) => sum + c.balance,
                   );
@@ -282,7 +290,8 @@ class _HomeOverview extends material.StatelessWidget {
                               _AccountLine(
                                 card: visibleCards[i],
                                 formatter: formatter,
-                                onTap: () => onOpenCard(visibleCards[i].id),
+                                onTap: () =>
+                                    onOpenCardTransactions(visibleCards[i].id),
                               ),
                               if (i < visibleCards.length - 1)
                                 material.Divider(
@@ -297,9 +306,7 @@ class _HomeOverview extends material.StatelessWidget {
                       material.Center(
                         child: material.OutlinedButton.icon(
                           onPressed: () {},
-                          icon: const material.Icon(
-                            material.Icons.add_circle_outline_rounded,
-                          ),
+                          icon: const material.Icon(AppIcons.add),
                           label: const material.Text('Ajouter un produit'),
                           style: material.OutlinedButton.styleFrom(
                             padding: const material.EdgeInsets.symmetric(
@@ -417,7 +424,7 @@ class _AccountLine extends material.StatelessWidget {
               ),
               alignment: material.Alignment.center,
               child: material.Icon(
-                material.Icons.account_balance_wallet_outlined,
+                AppIcons.wallet,
                 size: 16,
                 color: cs.primary,
               ),
@@ -480,6 +487,91 @@ class _PlaceholderSection extends material.StatelessWidget {
   }
 }
 
+class _ServicesSection extends material.StatelessWidget {
+  const _ServicesSection({required this.cardsAsync, required this.onOpenCard});
+
+  final AsyncValue<List<Card>> cardsAsync;
+  final material.ValueChanged<String> onOpenCard;
+
+  @override
+  material.Widget build(material.BuildContext context) {
+    final theme = material.Theme.of(context);
+    final cs = theme.colorScheme;
+    final amountFormat = NumberFormat.currency(
+      locale: AppConstants.currencyLocale,
+      symbol: 'CHF ',
+      decimalDigits: 2,
+    );
+
+    return material.ListView(
+      padding: AppLayout.screenPadding,
+      children: [
+        material.Text('Mes cartes', style: theme.textTheme.displaySmall),
+        const material.SizedBox(height: 10),
+        material.Text(
+          'Vos cartes et paramètres de paiement.',
+          style: theme.textTheme.bodyMedium,
+        ),
+        const material.SizedBox(height: 18),
+        cardsAsync.when(
+          data: (cards) {
+            return material.DecoratedBox(
+              decoration: material.BoxDecoration(
+                color: cs.surface,
+                borderRadius: AppLayout.cardRadius,
+                border: material.Border.all(color: cs.outline),
+              ),
+              child: material.Column(
+                children: [
+                  for (var i = 0; i < cards.length; i++) ...[
+                    material.ListTile(
+                      onTap: () => onOpenCard(cards[i].id),
+                      contentPadding: const material.EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 8,
+                      ),
+                      leading: material.Container(
+                        width: 34,
+                        height: 22,
+                        decoration: material.BoxDecoration(
+                          color: cs.primary.withValues(alpha: 0.22),
+                          borderRadius: material.BorderRadius.circular(4),
+                        ),
+                      ),
+                      title: material.Text(
+                        '${cards[i].label} · ${cards[i].maskedNumber}',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      subtitle: material.Text(
+                        amountFormat.format(cards[i].balance),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      trailing: const material.Icon(AppIcons.chevronRight),
+                    ),
+                    if (i < cards.length - 1)
+                      material.Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: cs.outline.withValues(alpha: 0.6),
+                      ),
+                  ],
+                ],
+              ),
+            );
+          },
+          loading: () => const material.Center(
+            child: material.CircularProgressIndicator(),
+          ),
+          error: (error, _) => material.Text(
+            'Unable to load cards: $error',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SettingsSection extends material.StatelessWidget {
   const _SettingsSection({
     required this.currentThemeMode,
@@ -518,12 +610,12 @@ class _SettingsSection extends material.StatelessWidget {
                   segments: const [
                     material.ButtonSegment<material.ThemeMode>(
                       value: material.ThemeMode.light,
-                      icon: material.Icon(material.Icons.light_mode_outlined),
+                      icon: material.Icon(AppIcons.lightMode),
                       label: material.Text('Light'),
                     ),
                     material.ButtonSegment<material.ThemeMode>(
                       value: material.ThemeMode.dark,
-                      icon: material.Icon(material.Icons.dark_mode_outlined),
+                      icon: material.Icon(AppIcons.darkMode),
                       label: material.Text('Dark'),
                     ),
                   ],
@@ -549,15 +641,13 @@ class _SettingsSection extends material.StatelessWidget {
                 const material.SizedBox(height: 12),
                 material.OutlinedButton.icon(
                   onPressed: onLockNow,
-                  icon: const material.Icon(
-                    material.Icons.lock_outline_rounded,
-                  ),
+                  icon: const material.Icon(AppIcons.lock),
                   label: const material.Text('Lock app now'),
                 ),
                 const material.SizedBox(height: 12),
                 material.ElevatedButton.icon(
                   onPressed: onLogout,
-                  icon: const material.Icon(material.Icons.logout_rounded),
+                  icon: const material.Icon(AppIcons.logout),
                   label: const material.Text('Log out'),
                 ),
               ],

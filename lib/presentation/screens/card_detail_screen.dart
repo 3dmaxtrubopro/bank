@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_icons.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../data/models/card.dart';
@@ -39,6 +40,32 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       );
   }
 
+  void _toggleCardFrozen(BuildContext context, Card card) {
+    ref.read(cardSettingsProvider.notifier).toggleCardFrozen(card.id);
+    final nextState = ref.read(cardSettingsByIdProvider(card.id));
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            nextState.isCardFrozen
+                ? 'Card has been frozen.'
+                : 'Card has been unfrozen.',
+          ),
+        ),
+      );
+  }
+
+  String _formatMoney(double amount, String currency) {
+    final formatter = NumberFormat.currency(
+      locale: AppConstants.currencyLocale,
+      symbol: '$currency ',
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -47,7 +74,15 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final transactions = ref.watch(selectedCardTransactionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Card details')),
+      appBar: AppBar(
+        title: Text(cardLabelFromId(widget.cardId)),
+        actions: [
+          IconButton(
+            onPressed: () => _showPreviewAction(context, 'Edit card details'),
+            icon: const Icon(AppIcons.edit),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: cardsAsync.when(
           data: (List<Card> cards) {
@@ -55,6 +90,8 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
             if (card == null) {
               return _EmptyState(cardId: widget.cardId);
             }
+            final settings = ref.watch(cardSettingsByIdProvider(card.id));
+            final limits = ref.watch(cardLimitsByIdProvider(card.id));
 
             final List<Transaction> cardTransactions = _filterTransactions(
               transactions,
@@ -69,24 +106,6 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                   onShowDetails: () =>
                       _showPreviewAction(context, 'Full card number'),
                 ),
-                const SizedBox(height: 24),
-                _SectionCard(
-                  title: 'Overview',
-                  child: Column(
-                    children: [
-                      _InfoRow(label: 'Cardholder', value: card.holderName),
-                      const Divider(),
-                      _InfoRow(label: 'Account', value: card.iban),
-                      const Divider(),
-                      _InfoRow(
-                        label: 'Status',
-                        value: card.isPrimary ? 'Primary card' : 'Active card',
-                      ),
-                      const Divider(),
-                      _InfoRow(label: 'Reference', value: card.id),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 16),
                 _SectionCard(
                   title: 'Actions',
@@ -94,28 +113,69 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _RoundAction(
-                        icon: Icons.lock_outline_rounded,
-                        label: 'Bloquer',
-                        selected: true,
-                        onTap: () => _showPreviewAction(context, 'Freeze card'),
+                        icon: AppIcons.lock,
+                        label: settings.isCardFrozen ? 'Bloquée' : 'Bloquer',
+                        selected: settings.isCardFrozen,
+                        onTap: () => _toggleCardFrozen(context, card),
                       ),
                       _RoundAction(
-                        icon: Icons.credit_card_outlined,
+                        icon: AppIcons.card,
                         label: 'Remplacer',
                         onTap: () =>
                             _showPreviewAction(context, 'Replace card'),
                       ),
                       _RoundAction(
-                        icon: Icons.pin_outlined,
+                        icon: AppIcons.pin,
                         label: 'NIP',
                         onTap: () =>
                             _showPreviewAction(context, 'Replacement PIN'),
                       ),
                       _RoundAction(
-                        icon: Icons.visibility_outlined,
+                        icon: AppIcons.eye,
                         label: 'Détails',
                         onTap: () =>
                             _showPreviewAction(context, 'Card details'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: 'Apple Pay',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Activez cette carte pour Apple Pay.',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            _showPreviewAction(context, 'Add to Apple Wallet'),
+                        icon: const Icon(AppIcons.apple),
+                        label: const Text('Ajouter à Cartes d’Apple'),
+                      ),
+                      const SizedBox(height: 18),
+                      Text('Click to Pay', style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Click to Pay offre le confort du sans contact en ligne.',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        onPressed: settings.isContactlessEnabled
+                            ? null
+                            : () {
+                                ref
+                                    .read(cardSettingsProvider.notifier)
+                                    .setContactlessEnabled(card.id, true);
+                              },
+                        icon: const Icon(AppIcons.contactless),
+                        label: Text(
+                          settings.isContactlessEnabled ? 'Activé' : 'Activer',
+                        ),
                       ),
                     ],
                   ),
@@ -128,30 +188,64 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
                       _SettingRow(
                         title: 'Limites des cartes',
                         subtitle:
-                            'Fixer des limites pour les retraits et les achats',
+                            'Montant mensuel: ${_formatMoney(limits.monthlyLimit, card.currency)}',
                         onTap: () => context.go('/card/${card.id}/limits'),
+                        trailing: const Icon(AppIcons.chevronRight),
                       ),
                       const Divider(),
                       _SettingRow(
-                        title: '3-D Secure est activé',
-                        subtitle:
-                            'Votre carte est activée pour les achats en ligne',
-                        onTap: () => _showPreviewAction(context, '3-D Secure'),
+                        title: '3-D Secure',
+                        subtitle: settings.is3DSecureEnabled
+                            ? 'Activé pour les achats en ligne'
+                            : 'Désactivé pour les achats en ligne',
+                        onTap: () {
+                          ref
+                              .read(cardSettingsProvider.notifier)
+                              .set3DSecureEnabled(
+                                card.id,
+                                !settings.is3DSecureEnabled,
+                              );
+                        },
+                        trailing: Switch(
+                          value: settings.is3DSecureEnabled,
+                          onChanged: (value) {
+                            ref
+                                .read(cardSettingsProvider.notifier)
+                                .set3DSecureEnabled(card.id, value);
+                          },
+                        ),
                       ),
                       const Divider(),
                       _SettingRow(
-                        title: 'Le paiement sans contact est activé',
-                        subtitle: 'Paiement sans PIN',
-                        onTap: () => _showPreviewAction(context, 'Contactless'),
+                        title: 'Paiement sans contact',
+                        subtitle: settings.isContactlessEnabled
+                            ? 'Paiement sans NIP pour petits montants'
+                            : 'Paiement sans contact désactivé',
+                        onTap: () {
+                          ref
+                              .read(cardSettingsProvider.notifier)
+                              .setContactlessEnabled(
+                                card.id,
+                                !settings.isContactlessEnabled,
+                              );
+                        },
+                        trailing: Switch(
+                          value: settings.isContactlessEnabled,
+                          onChanged: (value) {
+                            ref
+                                .read(cardSettingsProvider.notifier)
+                                .setContactlessEnabled(card.id, value);
+                          },
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
                 _SectionCard(
-                  title: 'Recent activity',
+                  title: 'Activité récente',
                   trailing: Text(
-                    '${cardTransactions.length} items',
+                    '${cardTransactions.length} opérations',
                     style: theme.textTheme.bodyMedium,
                   ),
                   child: cardTransactions.isEmpty
@@ -218,6 +312,19 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
   }
 }
 
+String cardLabelFromId(String cardId) {
+  switch (cardId) {
+    case 'primary':
+      return 'Compte jeunesse';
+    case 'travel':
+      return 'Mes cartes';
+    case 'reserve':
+      return 'Mes cartes';
+    default:
+      return 'Mes cartes';
+  }
+}
+
 class _HeroCard extends StatelessWidget {
   const _HeroCard({required this.card, required this.onShowDetails});
 
@@ -227,72 +334,119 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-    final NumberFormat currencyFormat = NumberFormat.currency(
-      locale: AppConstants.currencyLocale,
-      symbol: '${card.currency} ',
-      decimalDigits: 2,
-    );
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: AppLayout.cardRadius,
-        border: Border.all(color: colorScheme.primary),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(card.label, style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 6),
-                    Text(card.holderName, style: theme.textTheme.bodyMedium),
-                  ],
+          AspectRatio(
+            aspectRatio: 1.72,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFD100), Color(0xFFFFD100)],
                 ),
               ),
-              if (card.isPrimary)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: colorScheme.primary),
-                  ),
-                  child: Text(
-                    'Primary',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: colorScheme.primary,
+              child: Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      width: 114,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF2F2F2),
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-            ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.holderName.toUpperCase(),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          card.maskedNumber.replaceFirst(
+                            '**** ',
+                            '5461 31XX XXXX ',
+                          ),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            letterSpacing: 0.6,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Positioned(
+                    right: 14,
+                    bottom: 12,
+                    child: _MastercardBadge(),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 40),
-          Text(
-            card.maskedNumber,
-            style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 1.8),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            currencyFormat.format(card.balance),
-            style: theme.textTheme.displaySmall?.copyWith(fontSize: 30),
-          ),
-          const SizedBox(height: 8),
-          Text('Available balance', style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 28),
+          const SizedBox(height: 14),
           OutlinedButton.icon(
             onPressed: onShowDetails,
-            icon: const Icon(Icons.visibility_outlined),
-            label: const Text('Show details'),
+            icon: const Icon(AppIcons.eye),
+            label: const Text('Détails de la carte'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MastercardBadge extends StatelessWidget {
+  const _MastercardBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 42,
+      height: 22,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: const BoxDecoration(
+                color: Color(0xFFEB001B),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF79E1B),
+                shape: BoxShape.circle,
+              ),
+            ),
           ),
         ],
       ),
@@ -333,36 +487,6 @@ class _SectionCard extends StatelessWidget {
             child,
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
-          const SizedBox(width: 16),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: theme.textTheme.titleMedium,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -420,12 +544,14 @@ class _SettingRow extends StatelessWidget {
   const _SettingRow({
     required this.title,
     required this.subtitle,
-    required this.onTap,
+    this.onTap,
+    this.trailing,
   });
 
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -448,7 +574,7 @@ class _SettingRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            const Icon(Icons.edit_outlined, size: 18),
+            trailing ?? const Icon(AppIcons.edit, size: 18),
           ],
         ),
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_icons.dart';
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
 
@@ -205,7 +206,7 @@ class LoginScreen extends ConsumerWidget {
                                           .read(authProvider.notifier)
                                           .authenticateOnlyBiometrics();
                                     },
-                              icon: const Icon(Icons.fingerprint_rounded),
+                              icon: const Icon(AppIcons.biometrics),
                               label: const Text('Sign in with biometrics'),
                             ),
                           ],
@@ -230,7 +231,7 @@ class LoginScreen extends ConsumerWidget {
                             ),
                             alignment: Alignment.center,
                             child: Icon(
-                              Icons.verified_user_outlined,
+                              AppIcons.verifiedUser,
                               color: colorScheme.primary,
                             ),
                           ),

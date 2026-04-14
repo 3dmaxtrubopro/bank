@@ -5,6 +5,7 @@ abstract final class AppConstants {
   static const double gridUnit = 4;
   static const Duration apiDelay = Duration(milliseconds: 700);
   static const Duration appLockTimeout = Duration(seconds: 45);
+  static const Duration pendingSettlementDelay = Duration(seconds: 25);
   static const String defaultCurrency = 'CHF';
   static const String currencyLocale = 'en_CH';
   static const double stepUpAuthAmountThreshold = 1000;

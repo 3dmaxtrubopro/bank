@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_icons.dart';
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/security_provider.dart';
@@ -110,7 +111,7 @@ class UnlockScreen extends ConsumerWidget {
                             }
                             context.go('/');
                           },
-                          icon: const Icon(Icons.fingerprint_rounded),
+                          icon: const Icon(AppIcons.biometrics),
                           label: const Text('Unlock with biometrics'),
                         ),
                       ],

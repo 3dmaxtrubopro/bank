@@ -22,4 +22,28 @@ class Transaction {
   final DateTime date;
   final String emoji;
   final TransactionStatus status;
+
+  Transaction copyWith({
+    String? id,
+    String? cardId,
+    String? title,
+    String? subtitle,
+    double? amount,
+    String? currency,
+    DateTime? date,
+    String? emoji,
+    TransactionStatus? status,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      cardId: cardId ?? this.cardId,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      amount: amount ?? this.amount,
+      currency: currency ?? this.currency,
+      date: date ?? this.date,
+      emoji: emoji ?? this.emoji,
+      status: status ?? this.status,
+    );
+  }
 }

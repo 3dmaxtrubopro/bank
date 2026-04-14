@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_icons.dart';
 import '../../core/constants.dart';
 import '../../data/models/card.dart';
 import '../../data/models/transaction.dart';
@@ -276,7 +279,23 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
 
                                     await AppDataRepository.instance
                                         .addTransaction(tx);
-                                    ref.invalidate(transactionProvider);
+                                    ref
+                                      ..invalidate(transactionProvider)
+                                      ..invalidate(cardProvider);
+                                    unawaited(
+                                      Future<void>.delayed(
+                                        AppConstants.pendingSettlementDelay +
+                                            const Duration(seconds: 1),
+                                        () {
+                                          if (!mounted) {
+                                            return;
+                                          }
+                                          ref
+                                            ..invalidate(transactionProvider)
+                                            ..invalidate(cardProvider);
+                                        },
+                                      ),
+                                    );
 
                                     if (!context.mounted) {
                                       return;
@@ -288,7 +307,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                                         SnackBar(
                                           backgroundColor: colorScheme.primary,
                                           content: Text(
-                                            'Transfer booked: ${currencyFormat.format(parsedAmount)} to ${recipient.trim()}.',
+                                            'Transfer sent: ${currencyFormat.format(parsedAmount)} to ${recipient.trim()}. Initial status: Pending.',
                                             style: const TextStyle(
                                               color: Colors.white,
                                             ),
@@ -314,8 +333,13 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            currencyFormat.format(sourceCard.balance),
+                            currencyFormat.format(sourceCard.availableBalance),
                             style: theme.textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Booked: ${currencyFormat.format(sourceCard.bookedBalance)}',
+                            style: theme.textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -575,7 +599,7 @@ Future<_StepUpMethod?> _chooseStepUpMethod({
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.fingerprint_rounded),
+              leading: const Icon(AppIcons.biometrics),
               title: const Text('Use biometrics'),
               subtitle: Text('Approve $currency ${amount.toStringAsFixed(2)}'),
               onTap: () =>
@@ -583,7 +607,7 @@ Future<_StepUpMethod?> _chooseStepUpMethod({
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.pin_outlined),
+              leading: const Icon(AppIcons.pin),
               title: const Text('Use PIN'),
               subtitle: const Text('Enter your security PIN'),
               onTap: () => Navigator.of(sheetContext).pop(_StepUpMethod.pin),

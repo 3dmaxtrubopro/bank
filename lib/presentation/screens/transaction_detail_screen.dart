@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/app_icons.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../data/models/transaction.dart';
@@ -64,7 +65,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                         '&amount=${Uri.encodeComponent(amount)}',
                       );
                     },
-                    icon: const Icon(Icons.repeat_rounded),
+                    icon: const Icon(AppIcons.repeat),
                     label: const Text('Repeat transfer'),
                   ),
                 ],
