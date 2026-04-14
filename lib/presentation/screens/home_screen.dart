@@ -24,6 +24,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   material.Widget build(material.BuildContext context) {
+    final theme = material.Theme.of(context);
+    final cs = theme.colorScheme;
     final cardsAsync = ref.watch(cardProvider);
 
     final pages = <material.Widget>[
@@ -73,38 +75,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: material.NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        destinations: const [
-          material.NavigationDestination(
-            icon: material.Icon(AppIcons.homeOutlined),
-            selectedIcon: material.Icon(AppIcons.homeFilled),
-            label: 'Home',
-          ),
-          material.NavigationDestination(
-            icon: material.Icon(AppIcons.payOutlined),
-            selectedIcon: material.Icon(AppIcons.payFilled),
-            label: 'Paiements',
-          ),
-          material.NavigationDestination(
-            icon: material.Icon(AppIcons.insightsOutlined),
-            selectedIcon: material.Icon(AppIcons.insightsFilled),
-            label: 'Investir',
-          ),
-          material.NavigationDestination(
-            icon: material.Icon(AppIcons.servicesOutlined),
-            selectedIcon: material.Icon(AppIcons.servicesFilled),
-            label: 'Shop',
-          ),
-          material.NavigationDestination(
-            icon: material.Icon(AppIcons.profileOutlined),
-            selectedIcon: material.Icon(AppIcons.profileFilled),
-            label: 'Profil',
-          ),
-        ],
+      bottomNavigationBar: material.NavigationBarTheme(
+        data: material.NavigationBarThemeData(
+          height: 70,
+          indicatorColor: cs.primary.withValues(alpha: 0.22),
+          indicatorShape: const material.StadiumBorder(),
+          labelTextStyle: material.WidgetStateProperty.resolveWith((states) {
+            final selected = states.contains(material.WidgetState.selected);
+            return theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: selected
+                      ? material.FontWeight.w700
+                      : material.FontWeight.w500,
+                  color: selected
+                      ? cs.onSurface
+                      : cs.onSurface.withValues(alpha: 0.76),
+                ) ??
+                const material.TextStyle(fontSize: 11);
+          }),
+        ),
+        child: material.NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) {
+            setState(() => _selectedIndex = index);
+          },
+          labelBehavior: material.NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: const [
+            material.NavigationDestination(
+              icon: material.Icon(AppIcons.homeOutlined, size: 20),
+              selectedIcon: material.Icon(AppIcons.homeFilled, size: 20),
+              label: 'Home',
+            ),
+            material.NavigationDestination(
+              icon: material.Icon(AppIcons.payOutlined, size: 20),
+              selectedIcon: material.Icon(AppIcons.payFilled, size: 20),
+              label: 'Paiements',
+            ),
+            material.NavigationDestination(
+              icon: material.Icon(AppIcons.insightsOutlined, size: 20),
+              selectedIcon: material.Icon(AppIcons.insightsFilled, size: 20),
+              label: 'Investir',
+            ),
+            material.NavigationDestination(
+              icon: material.Icon(AppIcons.servicesOutlined, size: 20),
+              selectedIcon: material.Icon(AppIcons.servicesFilled, size: 20),
+              label: 'Shop',
+            ),
+            material.NavigationDestination(
+              icon: material.Icon(AppIcons.profileOutlined, size: 20),
+              selectedIcon: material.Icon(AppIcons.profileFilled, size: 20),
+              label: 'Profil',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -168,7 +190,7 @@ class _HomeOverview extends material.StatelessWidget {
           ),
         ),
         material.ListView(
-          padding: const material.EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: const material.EdgeInsets.fromLTRB(18, 8, 18, 20),
           children: [
             _StaggerReveal(
               delay: 0,
@@ -177,18 +199,18 @@ class _HomeOverview extends material.StatelessWidget {
                   const material.Spacer(),
                   material.Container(
                     padding: const material.EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                      horizontal: 12,
+                      vertical: 7,
                     ),
                     decoration: material.BoxDecoration(
                       color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-                      borderRadius: material.BorderRadius.circular(20),
+                      borderRadius: material.BorderRadius.circular(18),
                     ),
                     child: material.Row(
                       children: [
                         material.Icon(
                           AppIcons.search,
-                          size: 16,
+                          size: 14,
                           color: cs.onSurface,
                         ),
                         const material.SizedBox(width: 8),
@@ -202,7 +224,7 @@ class _HomeOverview extends material.StatelessWidget {
                 ],
               ),
             ),
-            const material.SizedBox(height: 20),
+            const material.SizedBox(height: 16),
             _StaggerReveal(
               delay: 80,
               child: material.Text(
@@ -211,11 +233,11 @@ class _HomeOverview extends material.StatelessWidget {
                 style: theme.textTheme.displaySmall?.copyWith(fontSize: 34),
               ),
             ),
-            const material.SizedBox(height: 18),
+            const material.SizedBox(height: 14),
             _StaggerReveal(
               delay: 150,
               child: material.Row(
-                mainAxisAlignment: material.MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: material.MainAxisAlignment.spaceAround,
                 children: [
                   _QuickActionBubble(
                     icon: AppIcons.scanner,
@@ -241,7 +263,7 @@ class _HomeOverview extends material.StatelessWidget {
                 ],
               ),
             ),
-            const material.SizedBox(height: 20),
+            const material.SizedBox(height: 16),
             _StaggerReveal(
               delay: 230,
               child: cardsAsync.when(
@@ -279,7 +301,7 @@ class _HomeOverview extends material.StatelessWidget {
                         curve: material.Curves.easeOutCubic,
                         decoration: material.BoxDecoration(
                           color: cs.surface.withValues(alpha: 0.65),
-                          borderRadius: material.BorderRadius.circular(22),
+                          borderRadius: material.BorderRadius.circular(18),
                           border: material.Border.all(
                             color: cs.outline.withValues(alpha: 0.7),
                           ),
@@ -310,11 +332,11 @@ class _HomeOverview extends material.StatelessWidget {
                           label: const material.Text('Ajouter un produit'),
                           style: material.OutlinedButton.styleFrom(
                             padding: const material.EdgeInsets.symmetric(
-                              horizontal: 26,
-                              vertical: 14,
+                              horizontal: 28,
+                              vertical: 12,
                             ),
                             shape: material.RoundedRectangleBorder(
-                              borderRadius: material.BorderRadius.circular(28),
+                              borderRadius: material.BorderRadius.circular(999),
                             ),
                           ),
                         ),
@@ -367,7 +389,7 @@ class _QuickActionBubble extends material.StatelessWidget {
               duration: const Duration(milliseconds: 220),
               curve: material.Curves.easeOutCubic,
               width: 48,
-              height: 48,
+              height: 46,
               decoration: material.BoxDecoration(
                 color: selected
                     ? cs.primary
@@ -377,7 +399,7 @@ class _QuickActionBubble extends material.StatelessWidget {
               alignment: material.Alignment.center,
               child: material.Icon(
                 icon,
-                size: 22,
+                size: 20,
                 color: selected ? cs.onPrimary : cs.onSurface,
               ),
             ),
@@ -412,12 +434,15 @@ class _AccountLine extends material.StatelessWidget {
       onTap: onTap,
       borderRadius: material.BorderRadius.circular(20),
       child: material.Padding(
-        padding: const material.EdgeInsets.all(16),
+        padding: const material.EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         child: material.Row(
           children: [
             material.Container(
-              width: 30,
-              height: 30,
+              width: 28,
+              height: 28,
               decoration: material.BoxDecoration(
                 color: cs.surfaceContainerHighest,
                 shape: material.BoxShape.circle,
@@ -425,7 +450,7 @@ class _AccountLine extends material.StatelessWidget {
               alignment: material.Alignment.center,
               child: material.Icon(
                 AppIcons.wallet,
-                size: 16,
+                size: 14,
                 color: cs.primary,
               ),
             ),
