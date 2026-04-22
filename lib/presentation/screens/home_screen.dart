@@ -27,6 +27,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = material.Theme.of(context);
     final cs = theme.colorScheme;
     final cardsAsync = ref.watch(cardProvider);
+    Future<bool> updateCardDetails({
+      required String cardId,
+      required String label,
+      required String holderName,
+      required String iban,
+    }) async {
+      final repository = ref.read(appDataRepositoryProvider);
+      final saved = await repository.updateCardDetails(
+        cardId: cardId,
+        label: label,
+        holderName: holderName,
+        iban: iban,
+      );
+      if (saved) {
+        ref.invalidate(cardProvider);
+      }
+      return saved;
+    }
 
     final pages = <material.Widget>[
       _HomeOverview(
@@ -36,24 +54,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ref.read(selectedCardIdProvider.notifier).state = cardId;
           context.go('/transactions');
         },
-        onUpdateCardDetails: ({
-          required cardId,
-          required label,
-          required holderName,
-          required iban,
-        }) async {
-          final repository = ref.read(appDataRepositoryProvider);
-          final saved = await repository.updateCardDetails(
-            cardId: cardId,
-            label: label,
-            holderName: holderName,
-            iban: iban,
-          );
-          if (saved) {
-            ref.invalidate(cardProvider);
-          }
-          return saved;
-        },
+        onUpdateCardDetails:
+            ({
+              required cardId,
+              required label,
+              required holderName,
+              required iban,
+            }) => updateCardDetails(
+              cardId: cardId,
+              label: label,
+              holderName: holderName,
+              iban: iban,
+            ),
       ),
       const _PlaceholderSection(
         title: 'Payer',
@@ -76,6 +88,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ref.read(selectedCardIdProvider.notifier).state = cardId;
           context.go('/card/$cardId');
         },
+        onUpdateCardDetails:
+            ({
+              required cardId,
+              required label,
+              required holderName,
+              required iban,
+            }) => updateCardDetails(
+              cardId: cardId,
+              label: label,
+              holderName: holderName,
+              iban: iban,
+            ),
         onOpenProfileSettings: () {
           _showProfileSettingsSheet(context);
         },
@@ -762,6 +786,7 @@ class _ServicesHubSection extends material.StatelessWidget {
   const _ServicesHubSection({
     required this.cardsAsync,
     required this.onOpenCard,
+    required this.onUpdateCardDetails,
     required this.onOpenProfileSettings,
     required this.onOpenPreviewAction,
     required this.onLogout,
@@ -769,6 +794,13 @@ class _ServicesHubSection extends material.StatelessWidget {
 
   final AsyncValue<List<Card>> cardsAsync;
   final material.ValueChanged<String> onOpenCard;
+  final Future<bool> Function({
+    required String cardId,
+    required String label,
+    required String holderName,
+    required String iban,
+  })
+  onUpdateCardDetails;
   final material.VoidCallback onOpenProfileSettings;
   final material.ValueChanged<String> onOpenPreviewAction;
   final material.VoidCallback onLogout;
@@ -784,9 +816,9 @@ class _ServicesHubSection extends material.StatelessWidget {
 
     return material.Stack(
       children: [
-        material.Positioned.fill(
+        const material.Positioned.fill(
           child: material.DecoratedBox(
-            decoration: const material.BoxDecoration(
+            decoration: material.BoxDecoration(
               gradient: material.LinearGradient(
                 colors: [backgroundA, backgroundB],
                 begin: material.Alignment.topLeft,
@@ -949,6 +981,7 @@ class _ServicesHubSection extends material.StatelessWidget {
   }
 
   Future<void> _openCardsSheet(material.BuildContext context) async {
+    final messenger = material.ScaffoldMessenger.of(context);
     await material.showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -969,6 +1002,14 @@ class _ServicesHubSection extends material.StatelessWidget {
                         material.Navigator.of(sheetContext).pop();
                         onOpenCard(card.id);
                       },
+                      onLongPress: () async {
+                        material.Navigator.of(sheetContext).pop();
+                        await _showEditCardSheet(
+                          context: context,
+                          card: card,
+                          messenger: messenger,
+                        );
+                      },
                     ),
                 ],
               ),
@@ -985,6 +1026,91 @@ class _ServicesHubSection extends material.StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _showEditCardSheet({
+    required material.BuildContext context,
+    required Card card,
+    required material.ScaffoldMessengerState messenger,
+  }) async {
+    final labelController = material.TextEditingController(text: card.label);
+    final holderController = material.TextEditingController(
+      text: card.holderName,
+    );
+    final ibanController = material.TextEditingController(text: card.iban);
+    final saved = await material.showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return material.AlertDialog(
+          title: const material.Text('Modifier le compte'),
+          content: material.Column(
+            mainAxisSize: material.MainAxisSize.min,
+            children: [
+              material.TextFormField(
+                controller: labelController,
+                decoration: const material.InputDecoration(
+                  labelText: 'Nom du compte',
+                ),
+              ),
+              const material.SizedBox(height: 10),
+              material.TextFormField(
+                controller: holderController,
+                decoration: const material.InputDecoration(
+                  labelText: 'Titulaire',
+                ),
+              ),
+              const material.SizedBox(height: 10),
+              material.TextFormField(
+                controller: ibanController,
+                decoration: const material.InputDecoration(
+                  labelText: 'IBAN',
+                  hintText: 'CH00 0000 0000 0000 0000 0',
+                ),
+                textInputAction: material.TextInputAction.done,
+              ),
+            ],
+          ),
+          actions: [
+            material.TextButton(
+              onPressed: () => material.Navigator.of(dialogContext).pop(false),
+              child: const material.Text('Annuler'),
+            ),
+            material.FilledButton(
+              onPressed: () async {
+                final ok = await onUpdateCardDetails(
+                  cardId: card.id,
+                  label: labelController.text,
+                  holderName: holderController.text,
+                  iban: ibanController.text,
+                );
+                if (!dialogContext.mounted) {
+                  return;
+                }
+                material.Navigator.of(dialogContext).pop(ok);
+              },
+              child: const material.Text('Enregistrer'),
+            ),
+          ],
+        );
+      },
+    );
+    labelController.dispose();
+    holderController.dispose();
+    ibanController.dispose();
+    if (!context.mounted || saved == null) {
+      return;
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        material.SnackBar(
+          content: material.Text(
+            saved
+                ? 'Données du compte mises à jour.'
+                : 'Impossible de mettre à jour les données.',
+          ),
+        ),
+      );
   }
 }
 
@@ -1013,7 +1139,10 @@ class _ServiceTile extends material.StatelessWidget {
       onTap: onTap,
       borderRadius: material.BorderRadius.circular(14),
       child: material.Padding(
-        padding: const material.EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        padding: const material.EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 14,
+        ),
         child: material.Row(
           children: [
             material.Stack(
