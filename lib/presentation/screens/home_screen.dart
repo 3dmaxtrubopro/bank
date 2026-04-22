@@ -36,6 +36,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ref.read(selectedCardIdProvider.notifier).state = cardId;
           context.go('/transactions');
         },
+        onUpdateCardDetails: ({
+          required cardId,
+          required label,
+          required holderName,
+          required iban,
+        }) async {
+          final repository = ref.read(appDataRepositoryProvider);
+          final saved = await repository.updateCardDetails(
+            cardId: cardId,
+            label: label,
+            holderName: holderName,
+            iban: iban,
+          );
+          if (saved) {
+            ref.invalidate(cardProvider);
+          }
+          return saved;
+        },
       ),
       const _PlaceholderSection(
         title: 'Payer',
@@ -45,19 +63,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: 'Investir',
         subtitle: 'Vue portefeuille et performance mensuelle.',
       ),
-      _ServicesSection(
+      _ShopSection(
         cardsAsync: cardsAsync,
         onOpenCard: (cardId) {
           ref.read(selectedCardIdProvider.notifier).state = cardId;
           context.go('/card/$cardId');
         },
       ),
-      _SettingsSection(
-        currentThemeMode: ref.watch(themeModeProvider),
-        onThemeModeChanged: (value) {
-          ref.read(themeModeProvider.notifier).state = value;
+      _ServicesHubSection(
+        cardsAsync: cardsAsync,
+        onOpenCard: (cardId) {
+          ref.read(selectedCardIdProvider.notifier).state = cardId;
+          context.go('/card/$cardId');
         },
-        onLockNow: () => ref.read(securityProvider.notifier).lockApp(),
+        onOpenProfileSettings: () {
+          _showProfileSettingsSheet(context);
+        },
+        onOpenPreviewAction: (label) {
+          material.ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              material.SnackBar(
+                content: material.Text('$label est disponible en preview.'),
+              ),
+            );
+        },
         onLogout: () {
           ref.read(authProvider.notifier).signOut();
           context.go('/login');
@@ -118,16 +148,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             material.NavigationDestination(
               icon: material.Icon(AppIcons.servicesOutlined, size: 20),
               selectedIcon: material.Icon(AppIcons.servicesFilled, size: 20),
-              label: 'Shop',
+              label: 'Offer',
             ),
             material.NavigationDestination(
               icon: material.Icon(AppIcons.profileOutlined, size: 20),
               selectedIcon: material.Icon(AppIcons.profileFilled, size: 20),
-              label: 'Profil',
+              label: 'Services',
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showProfileSettingsSheet(material.BuildContext context) async {
+    await material.showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return material.SizedBox(
+          height: material.MediaQuery.of(sheetContext).size.height * 0.8,
+          child: _SettingsSection(
+            currentThemeMode: ref.read(themeModeProvider),
+            onThemeModeChanged: (value) {
+              ref.read(themeModeProvider.notifier).state = value;
+            },
+            onLockNow: () => ref.read(securityProvider.notifier).lockApp(),
+            onLogout: () {
+              ref.read(authProvider.notifier).signOut();
+              if (sheetContext.mounted) {
+                material.Navigator.of(sheetContext).pop();
+              }
+              context.go('/login');
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -137,11 +194,19 @@ class _HomeOverview extends material.StatelessWidget {
     required this.cardsAsync,
     required this.onOpenTransfer,
     required this.onOpenCardTransactions,
+    required this.onUpdateCardDetails,
   });
 
   final AsyncValue<List<Card>> cardsAsync;
   final material.VoidCallback onOpenTransfer;
   final material.ValueChanged<String> onOpenCardTransactions;
+  final Future<bool> Function({
+    required String cardId,
+    required String label,
+    required String holderName,
+    required String iban,
+  })
+  onUpdateCardDetails;
 
   @override
   material.Widget build(material.BuildContext context) {
@@ -314,6 +379,12 @@ class _HomeOverview extends material.StatelessWidget {
                                 formatter: formatter,
                                 onTap: () =>
                                     onOpenCardTransactions(visibleCards[i].id),
+                                onLongPress: () {
+                                  _showEditIbanSheet(
+                                    context: context,
+                                    card: visibleCards[i],
+                                  );
+                                },
                               ),
                               if (i < visibleCards.length - 1)
                                 material.Divider(
@@ -357,6 +428,93 @@ class _HomeOverview extends material.StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _showEditIbanSheet({
+    required material.BuildContext context,
+    required Card card,
+  }) async {
+    final labelController = material.TextEditingController(text: card.label);
+    final holderController = material.TextEditingController(
+      text: card.holderName,
+    );
+    final ibanController = material.TextEditingController(text: card.iban);
+    final messenger = material.ScaffoldMessenger.of(context);
+    final saved = await material.showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return material.AlertDialog(
+          title: const material.Text('Modifier le compte'),
+          content: material.Column(
+            mainAxisSize: material.MainAxisSize.min,
+            children: [
+              material.TextFormField(
+                controller: labelController,
+                decoration: const material.InputDecoration(
+                  labelText: 'Nom du compte',
+                ),
+              ),
+              const material.SizedBox(height: 10),
+              material.TextFormField(
+                controller: holderController,
+                decoration: const material.InputDecoration(
+                  labelText: 'Titulaire',
+                ),
+              ),
+              const material.SizedBox(height: 10),
+              material.TextFormField(
+                controller: ibanController,
+                decoration: const material.InputDecoration(
+                  labelText: 'IBAN',
+                  hintText: 'CH00 0000 0000 0000 0000 0',
+                ),
+                textInputAction: material.TextInputAction.done,
+              ),
+            ],
+          ),
+          actions: [
+            material.TextButton(
+              onPressed: () => material.Navigator.of(dialogContext).pop(false),
+              child: const material.Text('Annuler'),
+            ),
+            material.FilledButton(
+              onPressed: () async {
+                final ok = await onUpdateCardDetails(
+                  cardId: card.id,
+                  label: labelController.text,
+                  holderName: holderController.text,
+                  iban: ibanController.text,
+                );
+                if (!dialogContext.mounted) {
+                  return;
+                }
+                material.Navigator.of(dialogContext).pop(ok);
+              },
+              child: const material.Text('Enregistrer'),
+            ),
+          ],
+        );
+      },
+    );
+    labelController.dispose();
+    holderController.dispose();
+    ibanController.dispose();
+
+    if (!context.mounted || saved == null) {
+      return;
+    }
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        material.SnackBar(
+          content: material.Text(
+            saved
+                ? 'Données du compte mises à jour.'
+                : 'Impossible de mettre à jour les données.',
+          ),
+        ),
+      );
   }
 }
 
@@ -420,11 +578,13 @@ class _AccountLine extends material.StatelessWidget {
     required this.card,
     required this.formatter,
     required this.onTap,
+    required this.onLongPress,
   });
 
   final Card card;
   final NumberFormat formatter;
   final material.VoidCallback onTap;
+  final material.VoidCallback onLongPress;
 
   @override
   material.Widget build(material.BuildContext context) {
@@ -432,6 +592,7 @@ class _AccountLine extends material.StatelessWidget {
     final cs = theme.colorScheme;
     return material.InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       borderRadius: material.BorderRadius.circular(20),
       child: material.Padding(
         padding: const material.EdgeInsets.symmetric(
@@ -512,8 +673,8 @@ class _PlaceholderSection extends material.StatelessWidget {
   }
 }
 
-class _ServicesSection extends material.StatelessWidget {
-  const _ServicesSection({required this.cardsAsync, required this.onOpenCard});
+class _ShopSection extends material.StatelessWidget {
+  const _ShopSection({required this.cardsAsync, required this.onOpenCard});
 
   final AsyncValue<List<Card>> cardsAsync;
   final material.ValueChanged<String> onOpenCard;
@@ -593,6 +754,296 @@ class _ServicesSection extends material.StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ServicesHubSection extends material.StatelessWidget {
+  const _ServicesHubSection({
+    required this.cardsAsync,
+    required this.onOpenCard,
+    required this.onOpenProfileSettings,
+    required this.onOpenPreviewAction,
+    required this.onLogout,
+  });
+
+  final AsyncValue<List<Card>> cardsAsync;
+  final material.ValueChanged<String> onOpenCard;
+  final material.VoidCallback onOpenProfileSettings;
+  final material.ValueChanged<String> onOpenPreviewAction;
+  final material.VoidCallback onLogout;
+
+  @override
+  material.Widget build(material.BuildContext context) {
+    final theme = material.Theme.of(context);
+    const backgroundA = material.Color(0xFF02333D);
+    const backgroundB = material.Color(0xFF012A33);
+    const panelColor = material.Color(0xFF022B34);
+    const iconColor = material.Color(0xFFBCD4DB);
+    const textColor = material.Color(0xFFE3EFF2);
+
+    return material.Stack(
+      children: [
+        material.Positioned.fill(
+          child: material.DecoratedBox(
+            decoration: const material.BoxDecoration(
+              gradient: material.LinearGradient(
+                colors: [backgroundA, backgroundB],
+                begin: material.Alignment.topLeft,
+                end: material.Alignment.bottomRight,
+              ),
+            ),
+          ),
+        ),
+        material.Positioned(
+          top: -80,
+          left: -44,
+          child: material.Container(
+            width: 210,
+            height: 210,
+            decoration: const material.BoxDecoration(
+              shape: material.BoxShape.circle,
+              color: material.Color(0x22007E90),
+            ),
+          ),
+        ),
+        material.Positioned(
+          bottom: -110,
+          right: -56,
+          child: material.Container(
+            width: 260,
+            height: 260,
+            decoration: const material.BoxDecoration(
+              shape: material.BoxShape.circle,
+              color: material.Color(0x22009AA8),
+            ),
+          ),
+        ),
+        material.ListView(
+          padding: const material.EdgeInsets.fromLTRB(18, 16, 18, 24),
+          children: [
+            material.Align(
+              alignment: material.Alignment.centerRight,
+              child: material.Container(
+                padding: const material.EdgeInsets.symmetric(
+                  horizontal: 13,
+                  vertical: 9,
+                ),
+                decoration: material.BoxDecoration(
+                  color: const material.Color(0x33011F26),
+                  borderRadius: material.BorderRadius.circular(18),
+                ),
+                child: material.Row(
+                  mainAxisSize: material.MainAxisSize.min,
+                  children: [
+                    const material.Icon(
+                      material.Icons.search_rounded,
+                      size: 18,
+                      color: textColor,
+                    ),
+                    const material.SizedBox(width: 6),
+                    material.Text(
+                      'Rechercher',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: textColor.withValues(alpha: 0.9),
+                        fontWeight: material.FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const material.SizedBox(height: 26),
+            material.Center(
+              child: material.Text(
+                'Services',
+                style: theme.textTheme.displaySmall?.copyWith(
+                  color: textColor,
+                  fontWeight: material.FontWeight.w700,
+                ),
+              ),
+            ),
+            const material.SizedBox(height: 22),
+            material.Container(
+              decoration: material.BoxDecoration(
+                color: panelColor.withValues(alpha: 0.94),
+                borderRadius: material.BorderRadius.circular(24),
+              ),
+              child: material.Column(
+                children: [
+                  _ServiceTile(
+                    icon: AppIcons.card,
+                    iconColor: iconColor,
+                    textColor: textColor,
+                    label: 'Cartes',
+                    onTap: () => _openCardsSheet(context),
+                  ),
+                  _ServiceTile(
+                    icon: material.Icons.notifications_none_rounded,
+                    iconColor: iconColor,
+                    textColor: textColor,
+                    label: 'Notifications',
+                    showDot: true,
+                    onTap: () => onOpenPreviewAction('Notifications'),
+                  ),
+                  _ServiceTile(
+                    icon: material.Icons.receipt_long_outlined,
+                    iconColor: iconColor,
+                    textColor: textColor,
+                    label: 'Documents',
+                    onTap: () => onOpenPreviewAction('Documents'),
+                  ),
+                  _ServiceTile(
+                    icon: material.Icons.manage_accounts_outlined,
+                    iconColor: iconColor,
+                    textColor: textColor,
+                    label: 'Profil et paramètres',
+                    onTap: onOpenProfileSettings,
+                  ),
+                  _ServiceTile(
+                    icon: material.Icons.help_outline_rounded,
+                    iconColor: iconColor,
+                    textColor: textColor,
+                    label: 'Contact et assistance',
+                    onTap: () => onOpenPreviewAction('Contact et assistance'),
+                  ),
+                ],
+              ),
+            ),
+            const material.SizedBox(height: 16),
+            material.Material(
+              color: panelColor.withValues(alpha: 0.94),
+              borderRadius: material.BorderRadius.circular(20),
+              child: material.InkWell(
+                onTap: onLogout,
+                borderRadius: material.BorderRadius.circular(20),
+                child: material.Padding(
+                  padding: const material.EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 18,
+                  ),
+                  child: material.Row(
+                    children: [
+                      const material.Icon(
+                        AppIcons.logout,
+                        color: iconColor,
+                        size: 21,
+                      ),
+                      const material.SizedBox(width: 14),
+                      material.Text(
+                        'Logout',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: textColor,
+                          fontWeight: material.FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openCardsSheet(material.BuildContext context) async {
+    await material.showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return cardsAsync.when(
+          data: (cards) {
+            return material.SafeArea(
+              child: material.ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final card in cards)
+                    material.ListTile(
+                      leading: const material.Icon(AppIcons.card),
+                      title: material.Text(card.label),
+                      subtitle: material.Text(card.maskedNumber),
+                      trailing: const material.Icon(AppIcons.chevronRight),
+                      onTap: () {
+                        material.Navigator.of(sheetContext).pop();
+                        onOpenCard(card.id);
+                      },
+                    ),
+                ],
+              ),
+            );
+          },
+          loading: () => const material.Padding(
+            padding: material.EdgeInsets.all(24),
+            child: material.Center(child: material.CircularProgressIndicator()),
+          ),
+          error: (error, _) => material.Padding(
+            padding: const material.EdgeInsets.all(24),
+            child: material.Text('Unable to load cards: $error'),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ServiceTile extends material.StatelessWidget {
+  const _ServiceTile({
+    required this.icon,
+    required this.iconColor,
+    required this.textColor,
+    required this.label,
+    required this.onTap,
+    this.showDot = false,
+  });
+
+  final material.IconData icon;
+  final material.Color iconColor;
+  final material.Color textColor;
+  final String label;
+  final material.VoidCallback onTap;
+  final bool showDot;
+
+  @override
+  material.Widget build(material.BuildContext context) {
+    final theme = material.Theme.of(context);
+
+    return material.InkWell(
+      onTap: onTap,
+      borderRadius: material.BorderRadius.circular(14),
+      child: material.Padding(
+        padding: const material.EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        child: material.Row(
+          children: [
+            material.Stack(
+              clipBehavior: material.Clip.none,
+              children: [
+                material.Icon(icon, size: 20, color: iconColor),
+                if (showDot)
+                  const material.Positioned(
+                    top: 1,
+                    right: -5,
+                    child: material.CircleAvatar(
+                      radius: 3,
+                      backgroundColor: material.Color(0xFFFF6D7A),
+                    ),
+                  ),
+              ],
+            ),
+            const material.SizedBox(width: 12),
+            material.Expanded(
+              child: material.Text(
+                label,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: textColor,
+                  fontWeight: material.FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -178,6 +178,37 @@ class AppDataRepository {
     _applyCardBalanceDeltaOnCreate(transaction);
   }
 
+  Future<bool> updateCardDetails({
+    required String cardId,
+    required String label,
+    required String holderName,
+    required String iban,
+  }) async {
+    await Future<void>.delayed(AppConstants.apiDelay);
+    final normalizedIban = iban.trim().replaceAll(RegExp(r'\s+'), ' ');
+    final normalizedLabel = label.trim();
+    final normalizedHolder = holderName.trim();
+    if (normalizedIban.isEmpty ||
+        normalizedLabel.isEmpty ||
+        normalizedHolder.isEmpty) {
+      return false;
+    }
+
+    for (int index = 0; index < _cards.length; index++) {
+      final current = _cards[index];
+      if (current.id != cardId) {
+        continue;
+      }
+      _cards[index] = current.copyWith(
+        label: normalizedLabel,
+        holderName: normalizedHolder,
+        iban: normalizedIban,
+      );
+      return true;
+    }
+    return false;
+  }
+
   void _applyCardBalanceDeltaOnCreate(Transaction transaction) {
     _adjustCardBalance(
       cardId: transaction.cardId,

@@ -334,6 +334,10 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final String cardNumber = card.maskedNumber.replaceFirst(
+      '**** ',
+      '5461 31XX XXXX ',
+    );
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -345,8 +349,10 @@ class _HeroCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text('Carte pour ce compte', style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 10),
           AspectRatio(
-            aspectRatio: 1.72,
+            aspectRatio: 1.76,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
@@ -356,24 +362,76 @@ class _HeroCard extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  Align(
-                    alignment: Alignment.centerRight,
+                  Positioned(
+                    right: -16,
+                    top: -34,
                     child: Container(
-                      width: 114,
+                      width: 160,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F3F3),
+                        borderRadius: BorderRadius.circular(80),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 14,
+                    top: -8,
+                    child: Container(
+                      width: 74,
+                      height: 58,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFF2F2F2),
+                        color: Color(0xFFFFD100),
                         borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(12),
-                          bottomRight: Radius.circular(12),
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                    padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          children: [
+                            Icon(
+                              AppIcons.card,
+                              size: 18,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'PostFinance',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              'debit',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Container(
+                          width: 28,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFFE8C778), Color(0xFFC79A52)],
+                            ),
+                            border: Border.all(color: const Color(0xFFB7873D)),
+                          ),
+                        ),
+                        const Spacer(),
                         Text(
                           card.holderName.toUpperCase(),
                           style: theme.textTheme.labelMedium?.copyWith(
@@ -381,16 +439,25 @@ class _HeroCard extends StatelessWidget {
                             letterSpacing: 0.2,
                           ),
                         ),
-                        const Spacer(),
-                        Text(
-                          card.maskedNumber.replaceFirst(
-                            '**** ',
-                            '5461 31XX XXXX ',
-                          ),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            letterSpacing: 0.6,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                cardNumber,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  letterSpacing: 0.6,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '12/29',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
