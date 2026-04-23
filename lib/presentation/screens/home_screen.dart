@@ -25,7 +25,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   material.Widget build(material.BuildContext context) {
     final theme = material.Theme.of(context);
-    final cs = theme.colorScheme;
     final cardsAsync = ref.watch(cardProvider);
     Future<bool> updateCardDetails({
       required String cardId,
@@ -131,20 +130,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       bottomNavigationBar: material.NavigationBarTheme(
         data: material.NavigationBarThemeData(
-          height: 70,
-          indicatorColor: cs.primary.withValues(alpha: 0.22),
+          height: 72,
+          backgroundColor: const material.Color(0xFF022A33),
+          indicatorColor: const material.Color(0x1ACDE7EC),
           indicatorShape: const material.StadiumBorder(),
           labelTextStyle: material.WidgetStateProperty.resolveWith((states) {
             final selected = states.contains(material.WidgetState.selected);
             return theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: selected
-                      ? material.FontWeight.w700
-                      : material.FontWeight.w500,
+                  fontWeight:
+                      selected
+                          ? material.FontWeight.w700
+                          : material.FontWeight.w500,
                   color: selected
-                      ? cs.onSurface
-                      : cs.onSurface.withValues(alpha: 0.76),
+                      ? const material.Color(0xFFE6F2F5)
+                      : const material.Color(0xFF91B4BB),
                 ) ??
                 const material.TextStyle(fontSize: 11);
+          }),
+          iconTheme: material.WidgetStateProperty.resolveWith((states) {
+            final selected = states.contains(material.WidgetState.selected);
+            return material.IconThemeData(
+              color: selected
+                  ? const material.Color(0xFFE6F2F5)
+                  : const material.Color(0xFF91B4BB),
+            );
           }),
         ),
         child: material.NavigationBar(
@@ -808,11 +817,12 @@ class _ServicesHubSection extends material.StatelessWidget {
   @override
   material.Widget build(material.BuildContext context) {
     final theme = material.Theme.of(context);
-    const backgroundA = material.Color(0xFF02333D);
-    const backgroundB = material.Color(0xFF012A33);
-    const panelColor = material.Color(0xFF022B34);
-    const iconColor = material.Color(0xFFBCD4DB);
-    const textColor = material.Color(0xFFE3EFF2);
+    const backgroundA = material.Color(0xFF012F39);
+    const backgroundB = material.Color(0xFF022630);
+    const backgroundC = material.Color(0xFF01242D);
+    const panelColor = material.Color(0xFF022831);
+    const iconColor = material.Color(0xFFBDD2D8);
+    const textColor = material.Color(0xFFE6F2F5);
 
     return material.Stack(
       children: [
@@ -820,86 +830,104 @@ class _ServicesHubSection extends material.StatelessWidget {
           child: material.DecoratedBox(
             decoration: material.BoxDecoration(
               gradient: material.LinearGradient(
-                colors: [backgroundA, backgroundB],
-                begin: material.Alignment.topLeft,
+                colors: [backgroundA, backgroundB, backgroundC],
+                begin: material.Alignment.topCenter,
                 end: material.Alignment.bottomRight,
               ),
             ),
           ),
         ),
         material.Positioned(
-          top: -80,
-          left: -44,
+          top: -72,
+          left: -58,
           child: material.Container(
-            width: 210,
-            height: 210,
+            width: 238,
+            height: 238,
             decoration: const material.BoxDecoration(
               shape: material.BoxShape.circle,
-              color: material.Color(0x22007E90),
+              color: material.Color(0x1F0797A5),
             ),
           ),
         ),
         material.Positioned(
-          bottom: -110,
-          right: -56,
+          top: 120,
+          right: -110,
           child: material.Container(
             width: 260,
             height: 260,
             decoration: const material.BoxDecoration(
               shape: material.BoxShape.circle,
-              color: material.Color(0x22009AA8),
+              color: material.Color(0x140AA8B7),
+            ),
+          ),
+        ),
+        material.Positioned(
+          bottom: -126,
+          right: -62,
+          child: material.Container(
+            width: 296,
+            height: 296,
+            decoration: const material.BoxDecoration(
+              shape: material.BoxShape.circle,
+              color: material.Color(0x1807A9B8),
             ),
           ),
         ),
         material.ListView(
-          padding: const material.EdgeInsets.fromLTRB(18, 16, 18, 24),
+          padding: const material.EdgeInsets.fromLTRB(16, 14, 16, 24),
           children: [
             material.Align(
               alignment: material.Alignment.centerRight,
               child: material.Container(
                 padding: const material.EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 9,
+                  horizontal: 13.5,
+                  vertical: 7.5,
                 ),
                 decoration: material.BoxDecoration(
-                  color: const material.Color(0x33011F26),
-                  borderRadius: material.BorderRadius.circular(18),
+                  color: const material.Color(0x2A00161D),
+                  borderRadius: material.BorderRadius.circular(20),
+                  border: material.Border.all(
+                    color: const material.Color(0x400E4A56),
+                  ),
                 ),
                 child: material.Row(
                   mainAxisSize: material.MainAxisSize.min,
                   children: [
                     const material.Icon(
                       material.Icons.search_rounded,
-                      size: 18,
-                      color: textColor,
+                      size: 16,
+                      color: material.Color(0xFFC7DBE0),
                     ),
                     const material.SizedBox(width: 6),
                     material.Text(
                       'Rechercher',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: textColor.withValues(alpha: 0.9),
-                        fontWeight: material.FontWeight.w600,
+                        color: const material.Color(0xFFBDD3D8),
+                        fontWeight: material.FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            const material.SizedBox(height: 26),
+            const material.SizedBox(height: 24),
             material.Center(
               child: material.Text(
                 'Services',
                 style: theme.textTheme.displaySmall?.copyWith(
                   color: textColor,
-                  fontWeight: material.FontWeight.w700,
+                  fontWeight: material.FontWeight.w600,
                 ),
               ),
             ),
-            const material.SizedBox(height: 22),
+            const material.SizedBox(height: 20),
             material.Container(
               decoration: material.BoxDecoration(
-                color: panelColor.withValues(alpha: 0.94),
-                borderRadius: material.BorderRadius.circular(24),
+                color: panelColor.withValues(alpha: 0.97),
+                borderRadius: material.BorderRadius.circular(26),
+                border: material.Border.all(
+                  color: const material.Color(0x330F5662),
+                ),
               ),
               child: material.Column(
                 children: [
@@ -942,17 +970,17 @@ class _ServicesHubSection extends material.StatelessWidget {
                 ],
               ),
             ),
-            const material.SizedBox(height: 16),
+            const material.SizedBox(height: 18),
             material.Material(
-              color: panelColor.withValues(alpha: 0.94),
-              borderRadius: material.BorderRadius.circular(20),
+              color: panelColor.withValues(alpha: 0.97),
+              borderRadius: material.BorderRadius.circular(18),
               child: material.InkWell(
                 onTap: onLogout,
-                borderRadius: material.BorderRadius.circular(20),
+                borderRadius: material.BorderRadius.circular(18),
                 child: material.Padding(
                   padding: const material.EdgeInsets.symmetric(
                     horizontal: 18,
-                    vertical: 18,
+                    vertical: 16,
                   ),
                   child: material.Row(
                     children: [
@@ -966,7 +994,7 @@ class _ServicesHubSection extends material.StatelessWidget {
                         'Logout',
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: textColor,
-                          fontWeight: material.FontWeight.w600,
+                          fontWeight: material.FontWeight.w500,
                         ),
                       ),
                     ],
@@ -1137,24 +1165,24 @@ class _ServiceTile extends material.StatelessWidget {
 
     return material.InkWell(
       onTap: onTap,
-      borderRadius: material.BorderRadius.circular(14),
+      borderRadius: material.BorderRadius.circular(16),
       child: material.Padding(
         padding: const material.EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 14,
+          horizontal: 18.5,
+          vertical: 13,
         ),
         child: material.Row(
           children: [
             material.Stack(
               clipBehavior: material.Clip.none,
               children: [
-                material.Icon(icon, size: 20, color: iconColor),
+                material.Icon(icon, size: 19, color: iconColor),
                 if (showDot)
                   const material.Positioned(
-                    top: 1,
-                    right: -5,
+                    top: 0.5,
+                    right: -4.5,
                     child: material.CircleAvatar(
-                      radius: 3,
+                      radius: 2.6,
                       backgroundColor: material.Color(0xFFFF6D7A),
                     ),
                   ),
@@ -1166,7 +1194,7 @@ class _ServiceTile extends material.StatelessWidget {
                 label,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: textColor,
-                  fontWeight: material.FontWeight.w600,
+                  fontWeight: material.FontWeight.w500,
                 ),
               ),
             ),
