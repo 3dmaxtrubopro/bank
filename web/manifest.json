@@ -1,6 +1,6 @@
 {
-    "name": "bank_ubs",
-    "short_name": "bank_ubs",
+    "name": "bank_postfinance",
+    "short_name": "bank_postfinance",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
@@ -33,3 +33,5 @@
         }
     ]
 }
+
+

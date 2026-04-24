@@ -7,7 +7,7 @@ import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
 
 final _usernameProvider = StateProvider<String>((ref) => 'alex.morgan');
-final _passwordProvider = StateProvider<String>((ref) => 'ubs-secure');
+final _passwordProvider = StateProvider<String>((ref) => 'postfinance-secure');
 final _biometricEnabledProvider = StateProvider<bool>((ref) => true);
 
 class LoginScreen extends ConsumerWidget {
@@ -265,3 +265,5 @@ class LoginScreen extends ConsumerWidget {
     );
   }
 }
+
+

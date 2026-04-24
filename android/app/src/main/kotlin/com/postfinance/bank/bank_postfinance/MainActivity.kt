@@ -1,4 +1,4 @@
-package com.ubs.bank.bank_ubs
+package com.postfinance.bank.bank_postfinance
 
 import io.flutter.embedding.android.FlutterActivity
 

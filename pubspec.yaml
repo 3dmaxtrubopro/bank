@@ -1,5 +1,5 @@
-name: bank_ubs
-description: "UBS mobile banking application shell."
+name: bank_postfinance
+description: "PostFinance mobile banking application shell."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -31,3 +31,5 @@ flutter:
           weight: 500
         - asset: assets/fonts/Inter-SemiBold.ttf
           weight: 600
+
+
