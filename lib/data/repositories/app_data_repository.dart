@@ -19,26 +19,6 @@ class AppDataRepository {
       iban: 'CH93 0076 2011 6238 5295 7',
       isPrimary: true,
     ),
-    const Card(
-      id: 'travel',
-      holderName: 'Alex Morgan',
-      label: 'PostFinance Travel',
-      maskedNumber: '**** 6721',
-      bookedBalance: 9420.20,
-      currency: AppConstants.defaultCurrency,
-      gradientColors: <int>[0xFF20404F, 0xFF6B8E9B],
-      iban: 'CH12 0023 8756 9104 0083 4',
-    ),
-    const Card(
-      id: 'reserve',
-      holderName: 'Alex Morgan',
-      label: 'PostFinance Reserve',
-      maskedNumber: '**** 9024',
-      bookedBalance: 245800.00,
-      currency: AppConstants.defaultCurrency,
-      gradientColors: <int>[0xFF5B4A35, 0xFFB8A06A],
-      iban: 'CH44 0900 0000 8756 3112 5',
-    ),
   ];
 
   final List<Transaction> _transactions = <Transaction>[
@@ -113,16 +93,6 @@ class AppDataRepository {
       date: DateTime(2026, 3, 18, 8, 14),
       emoji: '',
     ),
-    Transaction(
-      id: 't8',
-      cardId: 'reserve',
-      title: 'Portfolio dividend',
-      subtitle: 'Equity income',
-      amount: 186.30,
-      currency: AppConstants.defaultCurrency,
-      date: DateTime(2026, 3, 31, 11, 5),
-      emoji: '📈',
-    ),
   ];
 
   Future<List<Card>> getCards() async {
@@ -183,11 +153,15 @@ class AppDataRepository {
     required String label,
     required String holderName,
     required String iban,
+    required double balance,
   }) async {
     await Future<void>.delayed(AppConstants.apiDelay);
     final normalizedIban = iban.trim().replaceAll(RegExp(r'\s+'), ' ');
     final normalizedLabel = label.trim();
     final normalizedHolder = holderName.trim();
+    if (!balance.isFinite) {
+      return false;
+    }
     if (normalizedIban.isEmpty ||
         normalizedLabel.isEmpty ||
         normalizedHolder.isEmpty) {
@@ -203,6 +177,8 @@ class AppDataRepository {
         label: normalizedLabel,
         holderName: normalizedHolder,
         iban: normalizedIban,
+        availableBalance: balance,
+        bookedBalance: balance,
       );
       return true;
     }

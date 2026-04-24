@@ -31,6 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       required String label,
       required String holderName,
       required String iban,
+      required double balance,
     }) async {
       final repository = ref.read(appDataRepositoryProvider);
       final saved = await repository.updateCardDetails(
@@ -38,6 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         label: label,
         holderName: holderName,
         iban: iban,
+        balance: balance,
       );
       if (saved) {
         ref.invalidate(cardProvider);
@@ -59,11 +61,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               required label,
               required holderName,
               required iban,
+              required balance,
             }) => updateCardDetails(
               cardId: cardId,
               label: label,
               holderName: holderName,
               iban: iban,
+              balance: balance,
             ),
       ),
       const _PlaceholderSection(
@@ -93,11 +97,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               required label,
               required holderName,
               required iban,
+              required balance,
             }) => updateCardDetails(
               cardId: cardId,
               label: label,
               holderName: holderName,
               iban: iban,
+              balance: balance,
             ),
         onOpenProfileSettings: () {
           _showProfileSettingsSheet(context);
@@ -238,6 +244,7 @@ class _HomeOverview extends material.StatelessWidget {
     required String label,
     required String holderName,
     required String iban,
+    required double balance,
   })
   onUpdateCardDetails;
 
@@ -472,6 +479,9 @@ class _HomeOverview extends material.StatelessWidget {
       text: card.holderName,
     );
     final ibanController = material.TextEditingController(text: card.iban);
+    final balanceController = material.TextEditingController(
+      text: card.balance.toStringAsFixed(2),
+    );
     final messenger = material.ScaffoldMessenger.of(context);
     final saved = await material.showDialog<bool>(
       context: context,
@@ -503,6 +513,18 @@ class _HomeOverview extends material.StatelessWidget {
                 ),
                 textInputAction: material.TextInputAction.done,
               ),
+              const material.SizedBox(height: 10),
+              material.TextFormField(
+                controller: balanceController,
+                keyboardType: const material.TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: false,
+                ),
+                decoration: const material.InputDecoration(
+                  labelText: 'Solde (CHF)',
+                  hintText: '128450.90',
+                ),
+              ),
             ],
           ),
           actions: [
@@ -512,11 +534,25 @@ class _HomeOverview extends material.StatelessWidget {
             ),
             material.FilledButton(
               onPressed: () async {
+                final parsedBalance = double.tryParse(
+                  balanceController.text.replaceAll(',', '.').trim(),
+                );
+                if (parsedBalance == null) {
+                  if (dialogContext.mounted) {
+                    material.ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const material.SnackBar(
+                        content: material.Text('Solde invalide.'),
+                      ),
+                    );
+                  }
+                  return;
+                }
                 final ok = await onUpdateCardDetails(
                   cardId: card.id,
                   label: labelController.text,
                   holderName: holderController.text,
                   iban: ibanController.text,
+                  balance: parsedBalance,
                 );
                 if (!dialogContext.mounted) {
                   return;
@@ -532,6 +568,7 @@ class _HomeOverview extends material.StatelessWidget {
     labelController.dispose();
     holderController.dispose();
     ibanController.dispose();
+    balanceController.dispose();
 
     if (!context.mounted || saved == null) {
       return;
@@ -808,6 +845,7 @@ class _ServicesHubSection extends material.StatelessWidget {
     required String label,
     required String holderName,
     required String iban,
+    required double balance,
   })
   onUpdateCardDetails;
   final material.VoidCallback onOpenProfileSettings;
@@ -1066,6 +1104,9 @@ class _ServicesHubSection extends material.StatelessWidget {
       text: card.holderName,
     );
     final ibanController = material.TextEditingController(text: card.iban);
+    final balanceController = material.TextEditingController(
+      text: card.balance.toStringAsFixed(2),
+    );
     final saved = await material.showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -1096,6 +1137,18 @@ class _ServicesHubSection extends material.StatelessWidget {
                 ),
                 textInputAction: material.TextInputAction.done,
               ),
+              const material.SizedBox(height: 10),
+              material.TextFormField(
+                controller: balanceController,
+                keyboardType: const material.TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: false,
+                ),
+                decoration: const material.InputDecoration(
+                  labelText: 'Solde (CHF)',
+                  hintText: '128450.90',
+                ),
+              ),
             ],
           ),
           actions: [
@@ -1105,11 +1158,25 @@ class _ServicesHubSection extends material.StatelessWidget {
             ),
             material.FilledButton(
               onPressed: () async {
+                final parsedBalance = double.tryParse(
+                  balanceController.text.replaceAll(',', '.').trim(),
+                );
+                if (parsedBalance == null) {
+                  if (dialogContext.mounted) {
+                    material.ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const material.SnackBar(
+                        content: material.Text('Solde invalide.'),
+                      ),
+                    );
+                  }
+                  return;
+                }
                 final ok = await onUpdateCardDetails(
                   cardId: card.id,
                   label: labelController.text,
                   holderName: holderController.text,
                   iban: ibanController.text,
+                  balance: parsedBalance,
                 );
                 if (!dialogContext.mounted) {
                   return;
@@ -1125,6 +1192,7 @@ class _ServicesHubSection extends material.StatelessWidget {
     labelController.dispose();
     holderController.dispose();
     ibanController.dispose();
+    balanceController.dispose();
     if (!context.mounted || saved == null) {
       return;
     }
