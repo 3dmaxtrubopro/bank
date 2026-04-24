@@ -335,6 +335,7 @@ class _TransactionRow extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isPositive = transaction.amount >= 0;
+    final merchantName = _originalLikeMerchantName(transaction);
 
     return InkWell(
       onTap: onTap,
@@ -348,7 +349,7 @@ class _TransactionRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                transaction.title,
+                merchantName,
                 style: theme.textTheme.titleMedium?.copyWith(height: 1.25),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -375,22 +376,16 @@ class _MerchantIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (transaction.emoji.trim().isNotEmpty) {
-      return _BrandCircle(
-        background: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Text(transaction.emoji, style: const TextStyle(fontSize: 18)),
-      );
-    }
-
     final title = transaction.title.toLowerCase();
+    final merchant = _originalLikeMerchantName(transaction).toLowerCase();
 
-    if (title.contains('apple')) {
+    if (title.contains('apple') || merchant.contains('apple')) {
       return const _BrandCircle(
         background: Color(0xFF111111),
         child: Icon(AppIcons.apple, color: Colors.white, size: 20),
       );
     }
-    if (title.contains('twint')) {
+    if (title.contains('twint') || merchant.contains('twint')) {
       return _BrandCircle(
         background: const Color(0xFF0A0A0A),
         child: Text(
@@ -402,7 +397,7 @@ class _MerchantIcon extends StatelessWidget {
         ),
       );
     }
-    if (title.contains('kiosk')) {
+    if (title.contains('kiosk') || merchant.contains('kiosk')) {
       return _BrandCircle(
         background: const Color(0xFFE94352),
         child: Text(
@@ -412,6 +407,12 @@ class _MerchantIcon extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+      );
+    }
+    if (transaction.emoji.trim().isNotEmpty) {
+      return _BrandCircle(
+        background: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Text(transaction.emoji, style: const TextStyle(fontSize: 18)),
       );
     }
 
@@ -498,4 +499,22 @@ String _compactAmount(double amount) {
     AppConstants.currencyLocale,
   ).format(abs);
   return '$formatted${amount >= 0 ? '+' : '-'}';
+}
+
+String _originalLikeMerchantName(Transaction transaction) {
+  final subtitle = transaction.subtitle.trim();
+  if (subtitle.isNotEmpty &&
+      !subtitle.toLowerCase().contains('achat') &&
+      !subtitle.toLowerCase().contains('service')) {
+    return subtitle;
+  }
+
+  final title = transaction.title.trim();
+  if (title.contains(',')) {
+    return title.split(',').last.trim();
+  }
+  if (title.toLowerCase().contains('twint')) {
+    return 'TWINT';
+  }
+  return title;
 }
