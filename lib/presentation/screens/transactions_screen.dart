@@ -109,6 +109,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     String selectedEmoji = transaction.emoji.trim().isEmpty
         ? _emojiOptions.first
         : transaction.emoji;
+    final emojiController = TextEditingController(text: selectedEmoji);
     final messenger = ScaffoldMessenger.of(context);
     final bool? saved = await showDialog<bool>(
       context: context,
@@ -151,7 +152,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                           InkWell(
                             borderRadius: BorderRadius.circular(10),
                             onTap: () {
-                              setDialogState(() => selectedEmoji = emoji);
+                              setDialogState(() {
+                                selectedEmoji = emoji;
+                                emojiController.text = emoji;
+                              });
                             },
                             child: Container(
                               width: 40,
@@ -172,6 +176,21 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                             ),
                           ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: emojiController,
+                      decoration: const InputDecoration(
+                        labelText: 'Emoji personnalisé',
+                        hintText: 'Ex: 🐶',
+                      ),
+                      onChanged: (value) {
+                        final trimmed = value.trim();
+                        if (trimmed.isEmpty) {
+                          return;
+                        }
+                        setDialogState(() => selectedEmoji = trimmed);
+                      },
                     ),
                   ],
                 ),
@@ -205,6 +224,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
     titleController.dispose();
     subtitleController.dispose();
+    emojiController.dispose();
 
     if (!mounted || saved == null) {
       return;

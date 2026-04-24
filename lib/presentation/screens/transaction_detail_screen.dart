@@ -7,17 +7,49 @@ import '../../core/app_icons.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../data/models/transaction.dart';
+import '../../providers/card_provider.dart';
 import '../../providers/transaction_provider.dart';
 
-class TransactionDetailScreen extends ConsumerWidget {
+class TransactionDetailScreen extends ConsumerStatefulWidget {
   const TransactionDetailScreen({required this.transactionId, super.key});
 
   final String transactionId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TransactionDetailScreen> createState() =>
+      _TransactionDetailScreenState();
+}
+
+class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScreen> {
+  static const List<String> _emojiOptions = <String>[
+    '💳',
+    '🛒',
+    '🍽️',
+    '☕',
+    '🧾',
+    '🚕',
+    '🏠',
+    '🎬',
+    '🎵',
+    '🧑‍💻',
+    '📈',
+    '💸',
+    '✈️',
+    '🏥',
+    '🎁',
+    '📚',
+    '🍔',
+    '🛍️',
+    '🚇',
+    '⛽',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final transactionAsync = ref.watch(transactionByIdProvider(transactionId));
+    final transactionAsync = ref.watch(
+      transactionByIdProvider(widget.transactionId),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Transaction details')),
@@ -52,6 +84,12 @@ class TransactionDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   _DetailsCard(transaction: transaction),
                   const SizedBox(height: 20),
+                  OutlinedButton.icon(
+                    onPressed: () => _showEditTransactionDialog(transaction),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Edit transaction'),
+                  ),
+                  const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: () {
                       final recipient = _deriveRecipient(transaction);
@@ -82,6 +120,151 @@ class TransactionDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _showEditTransactionDialog(Transaction transaction) async {
+    final titleController = TextEditingController(text: transaction.title);
+    final subtitleController = TextEditingController(text: transaction.subtitle);
+    String selectedEmoji = transaction.emoji.trim().isEmpty
+        ? _emojiOptions.first
+        : transaction.emoji;
+    final emojiController = TextEditingController(text: selectedEmoji);
+    final messenger = ScaffoldMessenger.of(context);
+    final bool? saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text('Modifier la transaction'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Titre'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: subtitleController,
+                      decoration: const InputDecoration(labelText: 'Sous-titre'),
+                    ),
+                    const SizedBox(height: 14),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Emoji',
+                        style: Theme.of(
+                          dialogContext,
+                        ).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final emoji in _emojiOptions)
+                          InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () {
+                              setDialogState(() {
+                                selectedEmoji = emoji;
+                                emojiController.text = emoji;
+                              });
+                            },
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: selectedEmoji == emoji
+                                      ? Theme.of(dialogContext).colorScheme.primary
+                                      : Theme.of(dialogContext).colorScheme.outline,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 20),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: emojiController,
+                      decoration: const InputDecoration(
+                        labelText: 'Emoji personnalisé',
+                        hintText: 'Ex: 🐶',
+                      ),
+                      onChanged: (value) {
+                        final trimmed = value.trim();
+                        if (trimmed.isEmpty) {
+                          return;
+                        }
+                        setDialogState(() => selectedEmoji = trimmed);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final repository = ref.read(appDataRepositoryProvider);
+                    final ok = await repository.updateTransactionDetails(
+                      transactionId: transaction.id,
+                      title: titleController.text,
+                      subtitle: subtitleController.text,
+                      emoji: selectedEmoji,
+                    );
+                    if (!dialogContext.mounted) {
+                      return;
+                    }
+                    Navigator.of(dialogContext).pop(ok);
+                  },
+                  child: const Text('Enregistrer'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    titleController.dispose();
+    subtitleController.dispose();
+    emojiController.dispose();
+
+    if (!mounted || saved == null) {
+      return;
+    }
+    if (saved) {
+      ref
+        ..invalidate(transactionProvider)
+        ..invalidate(transactionByIdProvider(widget.transactionId));
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            saved
+                ? 'Transaction mise à jour.'
+                : 'Impossible de mettre à jour la transaction.',
+          ),
+        ),
+      );
   }
 }
 
