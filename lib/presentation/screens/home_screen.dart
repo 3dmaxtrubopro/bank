@@ -518,7 +518,6 @@ class _HomeOverview extends material.StatelessWidget {
                 controller: balanceController,
                 keyboardType: const material.TextInputType.numberWithOptions(
                   decimal: true,
-                  signed: false,
                 ),
                 decoration: const material.InputDecoration(
                   labelText: 'Solde (CHF)',
@@ -1142,7 +1141,6 @@ class _ServicesHubSection extends material.StatelessWidget {
                 controller: balanceController,
                 keyboardType: const material.TextInputType.numberWithOptions(
                   decimal: true,
-                  signed: false,
                 ),
                 decoration: const material.InputDecoration(
                   labelText: 'Solde (CHF)',
