@@ -84,12 +84,6 @@ class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScree
                   const SizedBox(height: 16),
                   _DetailsCard(transaction: transaction),
                   const SizedBox(height: 20),
-                  OutlinedButton.icon(
-                    onPressed: () => _showEditTransactionDialog(transaction),
-                    icon: const Icon(Icons.edit_outlined),
-                    label: const Text('Edit transaction'),
-                  ),
-                  const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: () {
                       final recipient = _deriveRecipient(transaction);
