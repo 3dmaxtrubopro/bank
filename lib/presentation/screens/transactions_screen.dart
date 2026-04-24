@@ -106,6 +106,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   Future<void> _showEditTransactionDialog(Transaction transaction) async {
     final titleController = TextEditingController(text: transaction.title);
     final subtitleController = TextEditingController(text: transaction.subtitle);
+    final amountController = TextEditingController(
+      text: transaction.amount.toStringAsFixed(2),
+    );
     String selectedEmoji = transaction.emoji.trim().isEmpty
         ? _emojiOptions.first
         : transaction.emoji;
@@ -130,6 +133,18 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     TextFormField(
                       controller: subtitleController,
                       decoration: const InputDecoration(labelText: 'Sous-titre'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Montant (CHF)',
+                        hintText: '-7.05',
+                      ),
                     ),
                     const SizedBox(height: 14),
                     Align(
@@ -202,12 +217,26 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 ),
                 FilledButton(
                   onPressed: () async {
+                    final parsedAmount = double.tryParse(
+                      amountController.text.replaceAll(',', '.').trim(),
+                    );
+                    if (parsedAmount == null) {
+                      if (dialogContext.mounted) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Montant invalide.'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
                     final repository = ref.read(appDataRepositoryProvider);
                     final ok = await repository.updateTransactionDetails(
                       transactionId: transaction.id,
                       title: titleController.text,
                       subtitle: subtitleController.text,
                       emoji: selectedEmoji,
+                      amount: parsedAmount,
                     );
                     if (!dialogContext.mounted) {
                       return;
@@ -224,6 +253,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
     titleController.dispose();
     subtitleController.dispose();
+    amountController.dispose();
     emojiController.dispose();
 
     if (!mounted || saved == null) {

@@ -190,11 +190,15 @@ class AppDataRepository {
     required String title,
     required String subtitle,
     required String emoji,
+    required double amount,
   }) async {
     await Future<void>.delayed(AppConstants.apiDelay);
     final normalizedTitle = title.trim();
     final normalizedSubtitle = subtitle.trim();
     final normalizedEmoji = emoji.trim();
+    if (!amount.isFinite) {
+      return false;
+    }
     if (normalizedTitle.isEmpty ||
         normalizedSubtitle.isEmpty ||
         normalizedEmoji.isEmpty) {
@@ -206,10 +210,20 @@ class AppDataRepository {
       if (current.id != transactionId) {
         continue;
       }
+      final previousEffective = _applySettlementStatus(current);
+      final amountDelta = amount - current.amount;
       _transactions[index] = current.copyWith(
         title: normalizedTitle,
         subtitle: normalizedSubtitle,
         emoji: normalizedEmoji,
+        amount: amount,
+      );
+      _adjustCardBalance(
+        cardId: current.cardId,
+        availableDelta: amountDelta,
+        bookedDelta: previousEffective.status == TransactionStatus.pending
+            ? 0
+            : amountDelta,
       );
       return true;
     }
