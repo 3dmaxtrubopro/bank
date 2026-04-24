@@ -1,4 +1,4 @@
-import 'package:bank_ubs/main.dart';
+import 'package:bank_postfinance/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -7,6 +7,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Wealth overview'), findsOneWidget);
-    expect(find.text('BANK'), findsOneWidget);
+    expect(find.text('POSTFINANCE'), findsOneWidget);
   });
 }
