@@ -82,7 +82,7 @@ class LoginScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 28),
                   Text(
-                    'PostFinance App',
+                    'PostFinance',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       letterSpacing: 1.1,
                     ),

@@ -1,6 +1,6 @@
 {
-    "name": "bank_postfinance",
-    "short_name": "bank_postfinance",
+    "name": "PostFinance",
+    "short_name": "PostFinance",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

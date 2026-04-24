@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppConstants {
-  static const String appTitle = 'PostFinance App';
+  static const String appTitle = 'PostFinance';
   static const double gridUnit = 4;
   static const Duration apiDelay = Duration(milliseconds: 700);
   static const Duration appLockTimeout = Duration(seconds: 45);
