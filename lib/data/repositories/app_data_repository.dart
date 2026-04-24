@@ -209,6 +209,37 @@ class AppDataRepository {
     return false;
   }
 
+  Future<bool> updateTransactionDetails({
+    required String transactionId,
+    required String title,
+    required String subtitle,
+    required String emoji,
+  }) async {
+    await Future<void>.delayed(AppConstants.apiDelay);
+    final normalizedTitle = title.trim();
+    final normalizedSubtitle = subtitle.trim();
+    final normalizedEmoji = emoji.trim();
+    if (normalizedTitle.isEmpty ||
+        normalizedSubtitle.isEmpty ||
+        normalizedEmoji.isEmpty) {
+      return false;
+    }
+
+    for (int index = 0; index < _transactions.length; index++) {
+      final current = _transactions[index];
+      if (current.id != transactionId) {
+        continue;
+      }
+      _transactions[index] = current.copyWith(
+        title: normalizedTitle,
+        subtitle: normalizedSubtitle,
+        emoji: normalizedEmoji,
+      );
+      return true;
+    }
+    return false;
+  }
+
   void _applyCardBalanceDeltaOnCreate(Transaction transaction) {
     _adjustCardBalance(
       cardId: transaction.cardId,
